@@ -21,7 +21,7 @@ Urutan yang paling terasa hasilnya:
 
 1. **Tahap 1** (paling sering terlihat): `idle`, `walk`, `attack`, `hurt`, `down`.
 2. **Tahap 2** (saat jurus): `skill1`, `skill2`, `ultimate`.
-3. **Opsional**, kalau ingin lebih halus lagi: `attack1.png`, `attack2.png`, `attack3.png` terpisah (tiga pukulan berbeda), `run.png`, `crouch.png`, `recover.png` (4 pose), serta `jump.png` dan `doublejump.png` (1 pose, pakai panduan `guide-1pose-*.png`). Untuk gerakan opsional ini pakai prompt mana pun di bawah dan ganti baris `Motion`.
+3. **Opsional**, kalau ingin lebih halus lagi: `attack1.png`, `attack2.png`, `attack3.png` terpisah (tiga pukulan berbeda), `run.png`, `crouch.png`, `recover.png` (4 pose), `land.png` (4 pose: mendarat, menahan benturan, bangkit ke posisi diam), serta `jump.png` dan `doublejump.png` (1 pose, pakai panduan `guide-1pose-*.png`; pose doublejump digulung rapat karena game memutarnya 360° untuk salto). Untuk gerakan opsional ini pakai prompt mana pun di bawah dan ganti baris `Motion`.
 
 Mulailah dari satu dedemit (misalnya Pocong, Tahap 1), lihat hasilnya di game, baru lanjut ke yang lain.
 

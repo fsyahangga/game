@@ -1,6 +1,6 @@
 {
   "files": 289,
-  "bytes": 33771505,
+  "bytes": 39338581,
   "list": [
     {
       "file": "index.html",
@@ -24,7 +24,7 @@
     },
     {
       "file": "ghosts.js",
-      "bytes": 12598
+      "bytes": 12099
     },
     {
       "file": "dedemit.css",
@@ -84,7 +84,7 @@
     },
     {
       "file": "game.js",
-      "bytes": 172739
+      "bytes": 173474
     },
     {
       "file": "menu.js",
@@ -96,7 +96,7 @@
     },
     {
       "file": "announcer.js",
-      "bytes": 3135
+      "bytes": 3174
     },
     {
       "file": "touch.js",
@@ -156,135 +156,135 @@
     },
     {
       "file": "assets/audio/announcer/arco_wins.mp3",
-      "bytes": 23031
+      "bytes": 17284
     },
     {
       "file": "assets/audio/announcer/cora_wins.mp3",
-      "bytes": 21359
+      "bytes": 14150
     },
     {
       "file": "assets/audio/announcer/double_ko.mp3",
-      "bytes": 24285
+      "bytes": 17911
     },
     {
       "file": "assets/audio/announcer/draw.mp3",
-      "bytes": 17598
+      "bytes": 12269
     },
     {
       "file": "assets/audio/announcer/edda_wins.mp3",
-      "bytes": 17598
+      "bytes": 18852
     },
     {
       "file": "assets/audio/announcer/fenr_wins.mp3",
-      "bytes": 24285
+      "bytes": 14777
     },
     {
       "file": "assets/audio/announcer/fight.mp3",
-      "bytes": 17598
+      "bytes": 11642
     },
     {
       "file": "assets/audio/announcer/haldor_wins.mp3",
-      "bytes": 21359
+      "bytes": 16344
     },
     {
       "file": "assets/audio/announcer/isolde_wins.mp3",
-      "bytes": 24285
+      "bytes": 14463
     },
     {
       "file": "assets/audio/announcer/ko.mp3",
-      "bytes": 11328
+      "bytes": 11955
     },
     {
       "file": "assets/audio/announcer/manifest.js",
-      "bytes": 3383
+      "bytes": 3737
     },
     {
       "file": "assets/audio/announcer/mira_wins.mp3",
-      "bytes": 26793
+      "bytes": 15717
     },
     {
       "file": "assets/audio/announcer/naja_wins.mp3",
-      "bytes": 23031
+      "bytes": 19165
     },
     {
       "file": "assets/audio/announcer/nib_wins.mp3",
-      "bytes": 23031
+      "bytes": 14463
     },
     {
       "file": "assets/audio/announcer/rhea_wins.mp3",
-      "bytes": 21359
+      "bytes": 16030
     },
     {
       "file": "assets/audio/announcer/round_1.mp3",
-      "bytes": 17598
+      "bytes": 15090
     },
     {
       "file": "assets/audio/announcer/round_2.mp3",
-      "bytes": 35570
+      "bytes": 14777
     },
     {
       "file": "assets/audio/announcer/round_3.mp3",
-      "bytes": 21359
+      "bytes": 17284
     },
     {
       "file": "assets/audio/announcer/select_arco.mp3",
-      "bytes": 15090
+      "bytes": 13523
     },
     {
       "file": "assets/audio/announcer/select_cora.mp3",
-      "bytes": 15090
+      "bytes": 11955
     },
     {
       "file": "assets/audio/announcer/select_edda.mp3",
-      "bytes": 16344
+      "bytes": 16030
     },
     {
       "file": "assets/audio/announcer/select_fenr.mp3",
-      "bytes": 17598
+      "bytes": 10702
     },
     {
       "file": "assets/audio/announcer/select_haldor.mp3",
-      "bytes": 18852
+      "bytes": 13836
     },
     {
       "file": "assets/audio/announcer/select_isolde.mp3",
-      "bytes": 11328
+      "bytes": 12582
     },
     {
       "file": "assets/audio/announcer/select_mira.mp3",
-      "bytes": 21359
+      "bytes": 12269
     },
     {
       "file": "assets/audio/announcer/select_naja.mp3",
-      "bytes": 18852
-    },
-    {
-      "file": "assets/audio/announcer/select_nib.mp3",
-      "bytes": 15090
-    },
-    {
-      "file": "assets/audio/announcer/select_rhea.mp3",
       "bytes": 16344
     },
     {
+      "file": "assets/audio/announcer/select_nib.mp3",
+      "bytes": 11642
+    },
+    {
+      "file": "assets/audio/announcer/select_rhea.mp3",
+      "bytes": 11642
+    },
+    {
       "file": "assets/audio/announcer/select_solan.mp3",
-      "bytes": 15090
+      "bytes": 18538
     },
     {
       "file": "assets/audio/announcer/select_zanni.mp3",
-      "bytes": 18852
+      "bytes": 16030
     },
     {
       "file": "assets/audio/announcer/solan_wins.mp3",
-      "bytes": 22612
+      "bytes": 21359
     },
     {
       "file": "assets/audio/announcer/time_up.mp3",
-      "bytes": 20106
+      "bytes": 16344
     },
     {
       "file": "assets/audio/announcer/zanni_wins.mp3",
-      "bytes": 24284
+      "bytes": 18852
     },
     {
       "file": "assets/audio/arco-ultimate-dylan.mp3",
@@ -304,11 +304,11 @@
     },
     {
       "file": "assets/cora/manifest.js",
-      "bytes": 11589
+      "bytes": 12314
     },
     {
       "file": "assets/cora/run/sprite-sheet-alpha.webp",
-      "bytes": 1632784
+      "bytes": 2104478
     },
     {
       "file": "assets/cora/ui/cutin.webp",
@@ -360,11 +360,11 @@
     },
     {
       "file": "assets/edda/manifest.js",
-      "bytes": 12245
+      "bytes": 12967
     },
     {
       "file": "assets/edda/run/sprite-sheet-alpha.webp",
-      "bytes": 1441966
+      "bytes": 1852464
     },
     {
       "file": "assets/edda/ui/cutin.webp",
@@ -416,11 +416,11 @@
     },
     {
       "file": "assets/fenr/human/manifest.js",
-      "bytes": 11573
+      "bytes": 12296
     },
     {
       "file": "assets/fenr/human/run/sprite-sheet-alpha.webp",
-      "bytes": 1941524
+      "bytes": 2492122
     },
     {
       "file": "assets/fenr/ui/cutin.webp",
@@ -488,11 +488,11 @@
     },
     {
       "file": "assets/fenr/wolf/manifest.js",
-      "bytes": 11590
+      "bytes": 12315
     },
     {
       "file": "assets/fenr/wolf/run/sprite-sheet-alpha.webp",
-      "bytes": 2198050
+      "bytes": 2806764
     },
     {
       "file": "assets/fonts/Rajdhani-Bold.ttf",
@@ -516,11 +516,11 @@
     },
     {
       "file": "assets/haldor/manifest.js",
-      "bytes": 11620
+      "bytes": 12345
     },
     {
       "file": "assets/haldor/run/sprite-sheet-alpha.webp",
-      "bytes": 2236708
+      "bytes": 2904514
     },
     {
       "file": "assets/haldor/ui/cutin.webp",
@@ -576,11 +576,11 @@
     },
     {
       "file": "assets/isolde/manifest.js",
-      "bytes": 11950
+      "bytes": 12673
     },
     {
       "file": "assets/isolde/run/sprite-sheet-alpha.webp",
-      "bytes": 1187132
+      "bytes": 1552670
     },
     {
       "file": "assets/isolde/ui/cutin.webp",
@@ -624,11 +624,11 @@
     },
     {
       "file": "assets/mecha/manifest.js",
-      "bytes": 11281
+      "bytes": 12005
     },
     {
       "file": "assets/mecha/run/sprite-sheet-alpha.webp",
-      "bytes": 1614816
+      "bytes": 1953988
     },
     {
       "file": "assets/menu/arco-select.webp",
@@ -712,11 +712,11 @@
     },
     {
       "file": "assets/mira/manifest.js",
-      "bytes": 11969
+      "bytes": 12693
     },
     {
       "file": "assets/mira/run/sprite-sheet-alpha.webp",
-      "bytes": 836028
+      "bytes": 1132646
     },
     {
       "file": "assets/mira/ui/cutin.webp",
@@ -772,11 +772,11 @@
     },
     {
       "file": "assets/naja/manifest.js",
-      "bytes": 11588
+      "bytes": 12314
     },
     {
       "file": "assets/naja/run/sprite-sheet-alpha.webp",
-      "bytes": 1616806
+      "bytes": 2119458
     },
     {
       "file": "assets/naja/ui/cutin.webp",
@@ -832,11 +832,11 @@
     },
     {
       "file": "assets/nib/manifest.js",
-      "bytes": 11938
+      "bytes": 12658
     },
     {
       "file": "assets/nib/run/sprite-sheet-alpha.webp",
-      "bytes": 1068502
+      "bytes": 1376352
     },
     {
       "file": "assets/nib/ui/cutin.webp",
@@ -892,11 +892,11 @@
     },
     {
       "file": "assets/rhea/manifest.js",
-      "bytes": 11913
+      "bytes": 12638
     },
     {
       "file": "assets/rhea/run/sprite-sheet-alpha.webp",
-      "bytes": 622664
+      "bytes": 794488
     },
     {
       "file": "assets/rhea/ui/cutin.webp",
@@ -992,11 +992,11 @@
     },
     {
       "file": "assets/solan/manifest.js",
-      "bytes": 11906
+      "bytes": 12629
     },
     {
       "file": "assets/solan/run/sprite-sheet-alpha.webp",
-      "bytes": 1452426
+      "bytes": 1871618
     },
     {
       "file": "assets/solan/ui/cutin.webp",
@@ -1104,11 +1104,11 @@
     },
     {
       "file": "assets/zanni/manifest.js",
-      "bytes": 11754
+      "bytes": 12474
     },
     {
       "file": "assets/zanni/run/sprite-sheet-alpha.webp",
-      "bytes": 2004536
+      "bytes": 2603958
     },
     {
       "file": "assets/zanni/ui/cutin.webp",
@@ -1152,7 +1152,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 16142
+      "bytes": 16143
     },
     {
       "file": "sw.js",

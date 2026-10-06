@@ -5,7 +5,7 @@
    stay as tuned; the one new mechanic is Pocong's binding rope (isolde.js piercer.bind, game.js bindHit).
    Load order: after every kit file and the announcer manifest, before announcer.js / game.js / menu.js.
    Art comes from assets/ghosts/base via guide/tools/build_ghost_assets.py. voice:true plays the slot's ultimate sound
-   (synthesised by guide/tools/build_dedemit_audio.py); announce:true keeps the slot's select/win announcer clips. */
+   (synthesised by guide/tools/build_dedemit_audio.py). */
 (() => {
   'use strict';
   const FACTIONS = {
@@ -118,10 +118,6 @@
   const kits = { mira: window.Mira, cora: window.Cora, naja: window.Naja, haldor: window.Haldor, zanni: window.Zanni, isolde: window.Isolde, rhea: window.Rhea, solan: window.Solan, nib: window.Nib, edda: window.Edda };
   for (const [slot, kit] of Object.entries(kits)) if (kit && Array.isArray(kit.names)) kit.names = [...GHOSTS[slot].names];
   if (window.Fenr?.kits) { window.Fenr.kits.human.names = [...GHOSTS.fenr.names]; window.Fenr.kits.wolf.names = [...GHOSTS.fenr.beast.names]; }
-
-  // Old announcer clips say the previous fighter names; drop them until a dedemit gets its own (set announce:true).
-  const clips = window.ANNOUNCER_MANIFEST?.clips;
-  if (clips) for (const [slot, g] of Object.entries(GHOSTS)) if (!g.announce) { delete clips['select_' + slot]; delete clips[slot + '_wins']; }
 
   window.GHOST_FACTIONS = FACTIONS;
   window.GHOSTS = GHOSTS;

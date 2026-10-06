@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const W = 1280, H = 720;
-  const CONFIG = { groundY: 584, walkSpeed: 320, runSpeed: 520, jumpSpeed: 830, doubleJumpSpeed: 790, gravity: 2900, fastFall: 1180, doubleTapWindow: .26, rollDuration: .28, ...window.STAGE_CONFIG };
+  const CONFIG = { groundY: 584, walkSpeed: 320, runSpeed: 520, jumpSpeed: 830, doubleJumpSpeed: 790, gravity: 2900, fastFall: 1180, doubleTapWindow: .26, rollDuration: .28, landTime: .2, ...window.STAGE_CONFIG };
   const canvas = document.querySelector('#arena'), ctx = canvas.getContext('2d', { alpha: false });
   const $ = s => document.querySelector(s);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -200,7 +200,7 @@
       if(event.type==='round-end') {
         clearInput();stopUltimateVoice();squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;hero.action=dummy.action=null;projectiles.length=effects.length=0;hitstop=cinematic=trauma=0;
         if(hero.hp<=0)state('down');else state('idle');if(currentDummyHP()>0){dummy.state='idle';dummy.stateTime=0;}
-        match.endText=event.doubleKO?'DOUBLE K.O.':event.timeout?'TIME UP':'K.O.';announceTimer=0;sound('heavy');
+        match.endText=event.doubleKO?'SAMA-SAMA TUMBANG':event.timeout?'WAKTU HABIS':'TUMBANG';announceTimer=0;sound('heavy');
         const call=event.doubleKO?'double_ko':event.timeout?'time_up':'ko';
         const outcome=event.winner==='draw'?'draw':`${event.winner==='player'?selectedCharacter:opponentCharacter}_wins`;
         const speech=window.ANNOUNCER_MANIFEST?.clips;
@@ -220,8 +220,8 @@
     $('#round-wins-player').textContent=versus?'◆'.repeat(match.playerWins)+'◇'.repeat(2-match.playerWins):'';$('#round-wins-enemy').textContent=versus?'◆'.repeat(match.enemyWins)+'◇'.repeat(2-match.enemyWins):'';
     const card=$('#round-call'),show=!menuOpen&&versus&&['intro','ko'].includes(match.phase);
     card.hidden=!show;card.dataset.phase=match?.phase||'fight';
-    $('#round-call-title').textContent=!show?'':match.phase==='intro'?(match.fightCue?'FIGHT':`ROUND ${match.round}`):match.endText||'K.O.';
-    $('#round-call-detail').textContent=match?.phase==='ko'?(match.lastWinner==='draw'?'DRAW · ROUND REPLAY':ghostName(match.lastWinner==='player'?selectedCharacter:opponentCharacter)+' WINS THE ROUND'):'DUA KALI MENANG';
+    $('#round-call-title').textContent=!show?'':match.phase==='intro'?(match.fightCue?'TARUNG!':match.round===3?'RONDE PENENTUAN':`RONDE ${match.round}`):match.endText||'TUMBANG';
+    $('#round-call-detail').textContent=match?.phase==='ko'?(match.lastWinner==='draw'?'SERI · RONDE DIULANG':ghostName(match.lastWinner==='player'?selectedCharacter:opponentCharacter)+' MENANG RONDE INI'):'DUA KALI MENANG';
     canvas.dataset.mode=match?.mode||'training';canvas.dataset.matchPhase=match?.phase||'fight';canvas.dataset.round=String(match?.round||1);canvas.dataset.opponent=opponentCharacter;canvas.dataset.difficulty=difficulty;canvas.dataset.stage=stageId;
   }
 
@@ -781,7 +781,7 @@
     updateVisuals(dt);
     for(const name of Object.keys(rechargePulse)) rechargePulse[name]=Math.max(0,rechargePulse[name]-dt);
     if (hitstop > 0) { hitstop -= dt; return; }
-    time += dt; hero.animTime += dt; hero.invuln = Math.max(0, hero.invuln - dt); hero.doublePose = Math.max(0, (hero.doublePose || 0) - dt);
+    time += dt; hero.animTime += dt; hero.invuln = Math.max(0, hero.invuln - dt); hero.doublePose = Math.max(0, (hero.doublePose || 0) - dt); hero.landTime = Math.max(0, (hero.landTime || 0) - dt);
     if(fenrCutin) {fenrCutin.t+=dt;if(fenrCutin.t>.78)fenrCutin=null;}
     if(F&&selectedCharacter==='fenr'){const changes=hero.formChanges;F.advance(hero,dt,hero.hp>0);if(changes!==hero.formChanges){syncPlayerForm();hero.doublePose=0;state(hero.grounded?'idle':'jump');}}
     hero.airTime = hero.grounded ? 0 : hero.airTime + dt;
@@ -815,7 +815,7 @@
       hero.smokeDistance+=travelled;
       while(hero.smokeDistance>=30) { hero.smokeDistance-=30; runSmoke(hero.x,hero.facing); }
     } else hero.smokeDistance=0;
-    if (!hero.grounded) { if (keys.has('s') && hero.vy > 0 && hero.doublePose <= 0) hero.vy = Math.max(hero.vy, CONFIG.fastFall); hero.vy += CONFIG.gravity * dt; hero.y += hero.vy * dt; if (hero.y >= CONFIG.groundY) { hero.y = CONFIG.groundY; hero.vy = 0; hero.grounded = true; hero.jumps = 0; hero.doublePose = 0; hero.airTime = 0; dust(hero.x, 11); sound('step'); } }
+    if (!hero.grounded) { if (keys.has('s') && hero.vy > 0 && hero.doublePose <= 0) hero.vy = Math.max(hero.vy, CONFIG.fastFall); hero.vy += CONFIG.gravity * dt; hero.y += hero.vy * dt; if (hero.y >= CONFIG.groundY) { hero.y = CONFIG.groundY; hero.vy = 0; hero.grounded = true; hero.jumps = 0; hero.doublePose = 0; hero.airTime = 0; hero.landTime = CONFIG.landTime; dust(hero.x, 11); sound('step'); } }
     const stride = metrics?.states?.[hero.state]?.stride_estimate || manifest?.metrics?.[hero.state === 'run' ? 'runStride' : 'walkStride'] || manifest?.locomotion?.[hero.state]?.stride_px || (hero.state === 'run' ? 184 : 148);
     hero.walkPhase += Math.abs(hero.vx) * dt / stride;
     updateDummy(dt); updateProjectiles(dt); updateSquadron(dt); updateSquadron(dt,enemySquad); updateParade(dt,parade); updateParade(dt,enemyParade); updateMurmuration(dt,flock); updateMurmuration(dt,enemyFlock); updateSerpent(dt,serpent); updateSerpent(dt,enemySerpent); updateQuake(dt,quake); updateFinale(dt,finale); updateFinale(dt,enemyFinale); updateSkyfall(dt,skyfall); updateSkyfall(dt,enemySkyfall); updateOrrery(dt,orrery); updateOrrery(dt,enemyOrrery); updateSunroar(dt,sunroar); updateSunroar(dt,enemySunroar); updateDelivery(dt,delivery); updateDelivery(dt,enemyDelivery); updateTortoise(dt,tortoise); updateTortoise(dt,enemyTortoise); updateQuake(dt,enemyQuake);
@@ -829,14 +829,14 @@
   function hpLayers(value) {return {front:clamp(value-BALANCE.hpPerBar,0,BALANCE.hpPerBar),reserve:clamp(value,0,BALANCE.hpPerBar)};}
   function updateDummy(dt) {
     if(F){for(const name of Object.keys(dummy.cooldowns))dummy.cooldowns[name]=Math.max(0,dummy.cooldowns[name]-dt);if(opponentCharacter==='fenr')F.advance(dummy,dt,!dummy.ko);}
-    dummy.stateTime += dt; dummy.flash = Math.max(0, dummy.flash - dt); dummy.invuln = Math.max(0, dummy.invuln - dt);
+    dummy.stateTime += dt; dummy.landTime = Math.max(0, (dummy.landTime || 0) - dt); dummy.flash = Math.max(0, dummy.flash - dt); dummy.invuln = Math.max(0, dummy.invuln - dt);
     dummy.x = clamp(dummy.x + dummy.vx * dt, 110, W - 100); if(!F || !aiEnabled || dummy.action || ['hurt','down','recover'].includes(dummy.state))dummy.vx = approach(dummy.vx, 0, dt * 950);
     if(F && !['down','recover'].includes(dummy.state) && hero.y>CONFIG.groundY-130 && dummy.y>CONFIG.groundY-130 && Math.abs(dummy.x-hero.x)<bodyGap())dummy.x=clamp(hero.x+(dummy.x>=hero.x?bodyGap():-bodyGap()),110,W-100);
     // Versus CPU follows the player's post-hurt immunity rule by difficulty, so a mashed chain cannot loop it forever.
     // Its stun lasts 0.5 s there, which still covers every 3-hit chain gap; the training dummy stays open for practice.
     if (dummy.bindTime > 0) { dummy.bindTime -= dt; dummy.vx = 0; }
     if (dummy.state === 'hurt' && !(dummy.bindTime > 0) && dummy.stateTime > (F && aiEnabled && match?.mode === 'versus' ? .5 : .4)) { dummy.state = dummy.y < CONFIG.groundY ? 'jump' : 'idle'; dummy.stateTime = 0; if (F && aiEnabled && match?.mode === 'versus') dummy.invuln = Math.max(dummy.invuln, cpuProfile().immunity); }
-    if (dummy.state !== 'down' && (dummy.y < CONFIG.groundY || dummy.vy < 0)) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.jumps = 0; cpu.doubleAt = 0; if (dummy.state === 'jump') { dummy.state = 'idle'; dummy.stateTime = 0; } dust(dummy.x, 8); } }
+    if (dummy.state !== 'down' && (dummy.y < CONFIG.groundY || dummy.vy < 0)) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.jumps = 0; cpu.doubleAt = 0; if (dummy.state === 'jump') { dummy.state = 'idle'; dummy.stateTime = 0; dummy.landTime = CONFIG.landTime; } dust(dummy.x, 8); } }
     if (dummy.state === 'down') { if (dummy.y < CONFIG.groundY || dummy.vy < 0) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dust(dummy.x, 24); trauma = Math.min(1, trauma + .3); } } if (dummy.stateTime > 1.7 && match?.mode!=='versus') { dummy.state = 'recover'; dummy.stateTime = 0; } }
     if (dummy.state === 'recover' && dummy.stateTime > .4) { dummy.state = 'idle'; dummy.stateTime = 0; if(dummy.ko) dummy.damage = 0; dummy.ko=false; dummy.invuln = .5; }
     if(F)updateFenrAI(dt);
@@ -1390,7 +1390,8 @@
   }
   function opponentPose() {
     const m=opponentCharacter==='arco'?window.MECHA_MANIFEST:opponentCharacter==='mira'?window.MIRA_MANIFEST:opponentCharacter==='cora'?window.CORA_MANIFEST:opponentCharacter==='naja'?window.NAJA_MANIFEST:opponentCharacter==='haldor'?window.HALDOR_MANIFEST:opponentCharacter==='zanni'?window.ZANNI_MANIFEST:opponentCharacter==='isolde'?window.ISOLDE_MANIFEST:opponentCharacter==='rhea'?window.RHEA_MANIFEST:opponentCharacter==='solan'?window.SOLAN_MANIFEST:opponentCharacter==='nib'?window.NIB_MANIFEST:opponentCharacter==='edda'?window.EDDA_MANIFEST:dummy.form==='wolf'?window.FENR_WOLF_MANIFEST:window.FENR_HUMAN_MANIFEST;
-    const name=m?.frame_layout?.rows?.[dummy.state]?dummy.state:'idle',list=m?.frame_layout?.rows?.[name]||[];
+    const landing=dummy.state==='idle'&&dummy.landTime>0&&m?.frame_layout?.rows?.land;
+    const name=landing?'land':m?.frame_layout?.rows?.[dummy.state]?dummy.state:'idle',list=m?.frame_layout?.rows?.[name]||[];
     let index=0;
     // Projectile casts that release at 50% show wind-up -> thrust -> full extension, like the player's pose.
     if(dummy.action?.type==='skill1'&&opponentCharacter!=='fenr')index=Math.min(2,list.length-1,Math.floor(dummy.action.t/(dummy.action.duration*.5)*3));
@@ -1398,6 +1399,7 @@
     else if(name==='walk'||name==='run')index=Math.floor(dummy.walkPhase*list.length)%list.length;
     else if(name==='down')index=Math.floor(dummy.stateTime/.55*list.length);
     else if(name==='recover')index=Math.floor(dummy.stateTime/.4*list.length);
+    else if(name==='land')index=Math.floor((1-dummy.landTime/CONFIG.landTime)*list.length);
     else index=Math.floor(dummy.stateTime*(m?.animation?.rows?.[name]?.fps||5));
     if(m?.animation?.rows?.[name]?.loop)index%=list.length;
     return {state:name,frame:clamp(index,0,Math.max(0,list.length-1)),manifest:m};
@@ -1429,11 +1431,14 @@
   }
   function shadow(x, y, width, opacity = .22) { ctx.fillStyle = `rgba(29,46,45,${opacity})`; ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y + 2), width, 10, 0, 0, Math.PI * 2); ctx.fill(); }
   function heroPose() {
-    const list = frames(hero.state).length ? frames(hero.state) : frames('idle');
-    const row = manifest?.animation?.rows?.[hero.state] || { fps: 8, loop: true };
-    const result = { state: hero.state, frame: 0, phase: hero.grounded ? 'grounded' : hero.airTime < .07 ? 'takeoff' : Math.abs(hero.vy) <= 100 ? 'apex' : hero.vy < 0 ? 'rising' : 'falling', rotation: 0, pivot: null, worldPivot: null, scale: Math.max(1, Math.round(manifest?.runtime?.scale || manifest?.runtime_scale || 1)) };
+    // A short landing pose after touching down; purely visual, the fighter can act at once.
+    const shown = hero.state === 'idle' && hero.landTime > 0 && frames('land').length ? 'land' : hero.state;
+    const list = frames(shown).length ? frames(shown) : frames('idle');
+    const row = manifest?.animation?.rows?.[shown] || { fps: 8, loop: true };
+    const result = { state: shown, frame: 0, phase: hero.grounded ? 'grounded' : hero.airTime < .07 ? 'takeoff' : Math.abs(hero.vy) <= 100 ? 'apex' : hero.vy < 0 ? 'rising' : 'falling', rotation: 0, pivot: null, worldPivot: null, scale: Math.max(1, Math.round(manifest?.runtime?.scale || manifest?.runtime_scale || 1)) };
     let index = 0;
-    if (hero.state === 'jump') {
+    if (shown === 'land') index = Math.floor((1 - hero.landTime / CONFIG.landTime) * list.length);
+    else if (hero.state === 'jump') {
       // The flight arc comes from physics. Hold one calm airborne pose, including at the apex.
       // Replaying the old takeoff/crouch strip in midair caused a visible body-size pop.
       index = metrics?.playback?.jump?.airFrame ?? Math.min(2, list.length - 1);
@@ -1457,8 +1462,8 @@
   function drawHero() {
     shadow(hero.x, CONFIG.groundY, Math.max(19, (selectedCharacter === 'mira' ? 63 : selectedCharacter === 'haldor' ? 58 : 52) - (CONFIG.groundY - hero.y) * .07), .20);
     if (!images.hero || !manifest) return;
-    let list = frames(hero.state); if (!list.length) list = frames('idle'); if (!list.length) return;
     const pose = heroPose(), index = pose.frame;
+    let list = frames(pose.state); if (!list.length) list = frames('idle'); if (!list.length) return;
     const r = list[index], cw = manifest.cell?.width || manifest.cell?.w || r.w, ch = manifest.cell?.height || manifest.cell?.h || r.h;
     const anchorX = manifest.cell?.anchor_x ?? cw / 2, anchorY = manifest.cell?.anchor_y ?? ch - (manifest.cell?.safe_margin_y || 0);
     const spriteScale = pose.scale;

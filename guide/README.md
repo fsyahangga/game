@@ -42,7 +42,7 @@ Dokumentasi ini menyimpan keputusan final dan cara menyiapkan karakter berikutny
 | Voice final Dylan, arsip kandidat, dan perilaku audio ultimate | [ultimate-voice.md](ultimate-voice.md) |
 | Voice final Holden untuk FENR, arsip audisi dan perilaku pemain/AI | [fenr-voice.md](fenr-voice.md) |
 | Voice ultimate Luna (MIRA) dan Anika (CORA), pemilihan dan pemotongan kalimat | [mira-cora-voice.md](mira-cora-voice.md) |
-| Announcer sistem final Grady: cue, timing, integrasi dan aturan karakter baru | [announcer-system.md](announcer-system.md) |
+| Announcer bahasa Indonesia (Ardi): naskah, cara generate, cue, timing dan integrasi | [announcer-system.md](announcer-system.md) |
 
 Jika pedoman generik bertentangan dengan keputusan proyek ini, gunakan gameplay-standard dan character-workflow. Instruksi pengguna berikutnya tetap dapat mengubah acuan; perbarui dokumen final bersamaan dengan implementasinya.
 

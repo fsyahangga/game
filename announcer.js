@@ -1,4 +1,4 @@
-/* Grady is the locked system announcer. One serialized speaker, never overlapping cues. */
+/* Ardi (Bahasa Indonesia, guide/tools/build_announcer.py) is the system announcer. One serialized speaker, never overlapping cues. */
 (() => {
   'use strict';
   function create({clips,canPlay,isPaused,onStart=()=>{},onActivity=()=>{}}){
@@ -41,7 +41,7 @@
       tick(dt){if(!active||!canPlay()||isPaused())return;active.elapsed+=dt;const duration=clips[active.key].duration||3;if(active.elapsed>duration+.4)finish();},
       get busy(){return !!active||queue.length>0;},
       get speaking(){return !!active&&!active.media.paused;},
-      snapshot(){return {voice:'Grady',cue:active?.key||'',lastCue,active:!!active,paused:active?.media.paused??true,time:active?.media.currentTime||0,readyState:active?.media.readyState||0,starts,error,queue:[...queue]};}
+      snapshot(){return {voice:window.ANNOUNCER_MANIFEST?.voice?.name||'announcer',cue:active?.key||'',lastCue,active:!!active,paused:active?.media.paused??true,time:active?.media.currentTime||0,readyState:active?.media.readyState||0,starts,error,queue:[...queue]};}
     };
   }
   window.SystemAnnouncer={create};

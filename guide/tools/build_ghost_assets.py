@@ -183,7 +183,7 @@ STRIP_SOURCES = {   # engine row -> strip files to try, in order; a trailing '<'
 }
 # Fallback when there is no idle strip: the tallest pose of a strip is scaled to this share of the standing height.
 STRIP_FIT = {'idle': 1.0, 'walk': 1.0, 'run': .98, 'crouch': .82, 'jump': 1.0, 'doublejump': .78, 'attack1': 1.04, 'attack2': 1.04, 'attack3': 1.06,
-             'skill1': 1.04, 'skill2': 1.04, 'ultimate': 1.08, 'hurt': .98, 'down': .9, 'recover': .95}
+             'skill1': 1.04, 'skill2': 1.04, 'ultimate': 1.08, 'hurt': .98, 'down': .9, 'recover': .95, 'land': .85}
 
 def split_poses(img, n):
     """Cut a cut-out strip into n poses at the widest empty column gaps (equal slices if the gaps are missing)."""
@@ -258,6 +258,21 @@ def place_pose(pose_img, cell_w, cell_h, ax, ay, lift=0, tint=None):
     x = round(ax - feet_x(p)); x = min(max(6, x), cell_w - 6 - p.width); y = ay - lift - p.height
     cell = Image.new('RGBA', (cell_w, cell_h)); cell.alpha_composite(p, (x, y)); return cell, cell.getbbox()
 
+def add_land_row(man, met, ghost, strip_folder):
+    """The Aether Clash slots have no landing row. A dedemit with a land strip gets one appended below the last row;
+    the engine plays it for a moment after touching down (game.js LAND_TIME)."""
+    lay = man['frame_layout']
+    if 'land' in lay['rows'] or not ghost: return
+    d = STRIP_DIR / (strip_folder or ghost)
+    if not strip_file(d, 'land') and not strip_file(STRIP_DIR / ghost, 'land'): return
+    cw, ch, y = lay['cellWidth'], lay['cellHeight'], lay['sheetHeight']
+    lay['rows']['land'] = [{'x': cw * i, 'y': y, 'w': cw, 'h': ch} for i in range(4)]
+    lay['sheetHeight'] = y + ch
+    rows = man['animation']['rows']
+    rows['land'] = {'row': max(r['row'] for r in rows.values()) + 1, 'frames': 4, 'fps': 20, 'durations_ms': [50] * 4,
+                    'loop': False, 'frame_variant': 'pixel'}
+    met.setdefault('states', {})['land'] = {'frames': []}
+
 def build_atlas(fig, atlas_path, manifest_path, prefix, height, tint=None, lift=0, ghost=None, key=None, strip_folder=None):
     data = read_manifest(manifest_path)
     man, met = data[prefix + '_MANIFEST'], data[prefix + '_METRICS']
@@ -268,6 +283,7 @@ def build_atlas(fig, atlas_path, manifest_path, prefix, height, tint=None, lift=
     max_w = cw - 24                                       # very wide ghosts are narrowed to fit the cell
     if f.width > max_w: f = f.resize((max_w, round(f.height * max_w / f.width)), Image.LANCZOS)
     fx = feet_x(f)
+    add_land_row(man, met, ghost, strip_folder)
     sheet = Image.new('RGBA', (lay['sheetWidth'], lay['sheetHeight']))
     used = []
     for state, rects in lay['rows'].items():

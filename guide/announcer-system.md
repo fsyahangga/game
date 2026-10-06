@@ -1,42 +1,44 @@
-# Announcer sistem — Grady
+# Announcer sistem — Ardi (Bahasa Indonesia)
 
-Status: **Grady dipilih pengguna dan dikunci sebagai voice over sistem AETHER CLASH**. Berlaku untuk seluruh roster sekarang dan karakter baru. Voice ultimate karakter tetap terpisah: Dylan untuk ARCO, Holden untuk FENR, Luna untuk MIRA, Anika untuk CORA.
+Status: **announcer PERANG DEDEMIT berbahasa Indonesia**, menggantikan Grady (bahasa Inggris) dari Aether Clash, yang memanggil nama petarung lama ("Arco wins!"). Semua klip memanggil nama dedemit. Suara ultimate tiap dedemit tetap terpisah (`guide/tools/build_dedemit_audio.py`).
 
 ## Identitas dan sumber
 
-- Provider: Higgsfield; model `text2speech_v2`, variant `elevenlabs`.
-- Voice: **Grady**, `voice_id=e2a2d2e6-9ed2-59cd-82af-feaa27f8a678`, `voice_type=preset`.
-- Bahasa Inggris. Lock resmi: voice-lock.json.
-- Generation record menyimpan request persis, job, URL, durasi, SHA256, dan hasil decode setiap MP3. Manifest memasangkan file dan durasi ke cue.
-- Dua belas klip awal digenerate terpisah; `select_mira`/`mira_wins` lalu `select_cora`/`cora_wins` ditambahkan dengan pasangan voice yang sama saat MIRA dan CORA masuk roster (total 16). Sampel gabungan Grady/Arthur/Reid di folder announcer-candidates hanya arsip audisi, tidak dipakai runtime.
+- Suara: Microsoft neural **id-ID-ArdiNeural** (pria), lewat paket `edge-tts`. Prosodi: rate -6%, pitch -14 Hz.
+- Olahan: hening di awal dan akhir dipotong, diberi gema gelap pendek (dua pantulan dan ekor redup), dinormalkan ke -1 dBFS, MP3 96 kbps mono.
+- Pembuat: `guide/tools/build_announcer.py`. Naskah ada di `CUES` dan nama dedemit di `DEDEMIT` dalam skrip itu. Skrip menulis MP3 ke `assets/audio/announcer/` dan `manifest.js` (teks dan durasi asli tiap klip).
+- Kunci cue tetap memakai id slot engine (`select_isolde` = "Pocong!"), jadi `game.js` dan `menu.js` tidak perlu diubah.
 
 ## Cue aktif
 
 | Cue | Ucapan | Trigger |
 | --- | --- | --- |
-| select_arco / select_fenr / select_mira / select_cora | Arco! / Fenr! / Mira! / Cora! | Konfirmasi pemain atau lawan, bukan hover panel |
-| round_1 / round_2 / round_3 | Round one! / Round two! / Round three! | Awal ronde VS Computer |
-| fight | Fight! | Setelah pengumuman nomor ronde |
-| ko | K.O.! | Salah satu petarung KO |
-| arco_wins / fenr_wins / mira_wins / cora_wins | Arco wins! / Fenr wins! / Mira wins! / Cora wins! | Setelah panggilan hasil ronde, sesuai identitas pemenang |
-| time_up | Time up! | Waktu ronde habis |
-| draw | Draw! | Hasil seri, nomor ronde diulang |
-| double_ko | Double K.O.! | Kedua petarung KO bersamaan |
+| select_&lt;slot&gt; | Pocong! · Kuntilanak! · Sundel Bolong! · Wewe Gombel! · Genderuwo! · Eyang Sukmo Capo! · Leyak! · Kuyang! · Palasik! · Tuyul! · Jenglot! · Begu Ganjang! | Konfirmasi pemain atau lawan, bukan hover panel |
+| round_1 / round_2 / round_3 | Ronde satu! / Ronde dua! / Ronde penentuan! | Awal ronde VS Computer |
+| fight | Tarung! | Setelah pengumuman nomor ronde |
+| ko | Tumbang! | Salah satu petarung KO |
+| &lt;slot&gt;_wins | &lt;Nama dedemit&gt; menang! | Setelah panggilan hasil ronde, sesuai pemenang |
+| time_up | Waktu habis! | Waktu ronde habis |
+| draw | Seri! | Hasil seri, nomor ronde diulang |
+| double_ko | Sama-sama tumbang! | Kedua petarung KO bersamaan |
+
+Teks di layar mengikuti ucapan: RONDE 1 / RONDE 2 / RONDE PENENTUAN, TARUNG!, TUMBANG, WAKTU HABIS, SAMA-SAMA TUMBANG, "&lt;NAMA&gt; MENANG RONDE INI" dan "SERI · RONDE DIULANG".
+
+## Mengganti atau menambah suara
+
+- Ubah naskah: edit `CUES` di skrip, lalu `python guide/tools/build_announcer.py` (semua cue) atau `python guide/tools/build_announcer.py fight ko` (cue tertentu), lalu `node guide/tools/update_precache.mjs`.
+- Pakai rekaman sendiri atau ElevenLabs: timpa MP3-nya dengan nama file yang sama, lalu `python guide/tools/build_announcer.py --manifest-only` supaya durasi di manifest ikut benar. Durasi itu dipakai untuk timing intro dan hasil ronde.
+- Dedemit baru: tambahkan slot dan namanya di `DEDEMIT`. Skrip membuat `select_<slot>` dan `<slot>_wins` sendiri.
+- Butuh pip `numpy scipy edge-tts imageio-ffmpeg` dan internet (teks dikirim ke layanan suara Microsoft). ffmpeg diambil dari `imageio-ffmpeg`, tidak perlu dipasang terpisah.
 
 ## Playback dan timing
 
 `announcer.js` menyediakan satu kanal dengan antrean. `game.js` menghubungkan event, `menu.js` memanggil nama saat konfirmasi, dan `match.js` menyesuaikan waktu intro dengan durasi manifest. Tidak ada autoplay sebelum interaksi pengguna. Training tidak memakai pengumuman ronde kompetitif.
 
-FIGHT dimulai setelah `max(1.05, durasi round + 0.12)` detik; fase intro berakhir setelah `max(1.85, waktu FIGHT + durasi fight + 0.10)`. Klip Round two lebih panjang (sekitar 2.194 detik), sehingga intro ronde kedua juga lebih panjang. Jangan mengembalikan durasi tetap yang memotong klip. Fase hasil menunggu paling sedikit `max(2.2, jumlah durasi panggilan hasil + 0.5)` detik.
+TARUNG dimulai setelah `max(1.05, durasi round + 0.12)` detik; fase intro berakhir setelah `max(1.85, waktu TARUNG + durasi fight + 0.10)`. Jangan mengembalikan durasi tetap yang memotong klip. Fase hasil menunggu paling sedikit `max(2.2, jumlah durasi panggilan hasil + 0.5)` detik.
 
 Announcer berprioritas di atas voice ultimate; voice karakter dihentikan saat pengumuman dimulai. SFX diturunkan selama ucapan. Master volume dan mute berlaku untuk semua klip. Pause dan Pengaturan menjeda lalu melanjutkan posisi suara. Reset, kembali menu, dan halaman tersembunyi membersihkan panggilan lama agar tidak terdengar terlambat. Penolakan playback, file gagal, dan event lama tidak boleh menghentikan pertandingan; watchdog membatasi antrean yang macet.
 
-## Menambah karakter
-
-Baca voice-lock sebelum generate. Gunakan Grady dengan pasangan ID/type yang sama untuk `<Nama>!` dan `<Nama> wins!`, masing-masing satu file. Simpan prompt/job/checksum/durasi, perbarui manifest JSON dan JS, registrasi trigger runtime, serta tes pemilihan dan kemenangan. Jangan mengganti announcer dengan voice ultimate karakter atau preset baru tanpa instruksi pengguna.
-
 ## Verifikasi
 
-Semua 12 file awal, dua klip MIRA (1.306 s dan 1.646 s) dan dua klip CORA (0.914 s dan 1.306 s) lolos decode ffmpeg. Sembilan suite berjumlah **142 tes lulus**, termasuk 13 tes announcer untuk gating, antrean, timing, hasil, prioritas, pause, mute, reset, visibility, dan kegagalan playback.
-
-Browser localhost diperiksa di tab QA terpisah: sebelum interaksi starts=0; konfirmasi ARCO dan FENR memulai cue sesuai nama; Round 1 lalu Fight menaikkan starts menjadi 4 dan selesai tanpa announcerError. Playback HTMLAudio teramati berjalan (paused=false dan currentTime positif). Pemeriksaan ini membuktikan integrasi playback, bukan penilaian timbre melalui speaker; pemilihan timbre Grady berasal dari audisi pengguna.
+Di browser localhost: ke-32 klip termuat. Konfirmasi Pocong memutar `select_isolde` (readyState 4, playback berjalan). Intro ronde memutar Ronde satu lalu Tarung. KO pemain memutar Tumbang, lalu Sundel Bolong menang, lalu Ronde dua, tanpa error announcer. Pemeriksaan ini membuktikan integrasi dan playback, bukan penilaian timbre lewat speaker.
