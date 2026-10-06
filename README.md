@@ -19,7 +19,7 @@ Makhluk Halus versus Ilmu Hitam: Pocong, Kuntilanak, Genderuwo, Tuyul, Leyak, Ku
 PERANG DEDEMIT is built on [Aether Clash](https://github.com/bangtutorial/aether-clash) by Bang Tutorial ([YouTube tutorial](https://www.youtube.com/watch?v=UN_0bNC2wTU)). The engine, combat and CPU come from Aether Clash; each of its twelve kit slots is played by a dedemit whose legend fits that slot's moves. The in-game **Kitab Dedemit** tells each dedemit's legend and lists its moves.
 
 > [!NOTE]
-> **Work in progress.** Fighters are placeholder puppet sprites built from one base image each (`guide/tools/build_ghost_assets.py`), not frame-by-frame animation yet. Music (a pelog gamelan loop) and each dedemit's ultimate sound are synthesised by `guide/tools/build_dedemit_audio.py`; the announcer is still the original English voice.
+> **Work in progress.** Every dedemit is animated from drawn sprite strips (idle, walk, jump, three separate basic attacks, both skills, ultimate, hurt and down) cut into the atlas by `guide/tools/build_ghost_assets.py`; crouch and double jump still use puppet frames made from the base image. Music (a pelog gamelan loop) and each dedemit's ultimate sound are synthesised by `guide/tools/build_dedemit_audio.py`; the announcer is still the original English voice.
 
 ## 👻 Roster
 

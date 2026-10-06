@@ -1,6 +1,6 @@
 {
   "files": 289,
-  "bytes": 29766482,
+  "bytes": 33771505,
   "list": [
     {
       "file": "index.html",
@@ -44,7 +44,7 @@
     },
     {
       "file": "assets/audio/music/malam-dedemit.mp3",
-      "bytes": 815587
+      "bytes": 1403919
     },
     {
       "file": "pwa.js",
@@ -148,7 +148,7 @@
     },
     {
       "file": "assets/ui/drone.png",
-      "bytes": 13590
+      "bytes": 13401
     },
     {
       "file": "assets/menu/locked.svg",
@@ -304,11 +304,11 @@
     },
     {
       "file": "assets/cora/manifest.js",
-      "bytes": 11581
+      "bytes": 11589
     },
     {
       "file": "assets/cora/run/sprite-sheet-alpha.webp",
-      "bytes": 1344066
+      "bytes": 1632784
     },
     {
       "file": "assets/cora/ui/cutin.webp",
@@ -360,11 +360,11 @@
     },
     {
       "file": "assets/edda/manifest.js",
-      "bytes": 12237
+      "bytes": 12245
     },
     {
       "file": "assets/edda/run/sprite-sheet-alpha.webp",
-      "bytes": 1182430
+      "bytes": 1441966
     },
     {
       "file": "assets/edda/ui/cutin.webp",
@@ -416,15 +416,15 @@
     },
     {
       "file": "assets/fenr/human/manifest.js",
-      "bytes": 11566
+      "bytes": 11573
     },
     {
       "file": "assets/fenr/human/run/sprite-sheet-alpha.webp",
-      "bytes": 1609848
+      "bytes": 1941524
     },
     {
       "file": "assets/fenr/ui/cutin.webp",
-      "bytes": 134078
+      "bytes": 128310
     },
     {
       "file": "assets/fenr/ui/fx-bite.webp",
@@ -480,19 +480,19 @@
     },
     {
       "file": "assets/fenr/ui/portrait-human.webp",
-      "bytes": 48108
+      "bytes": 42340
     },
     {
       "file": "assets/fenr/ui/portrait-wolf.webp",
-      "bytes": 48244
+      "bytes": 42476
     },
     {
       "file": "assets/fenr/wolf/manifest.js",
-      "bytes": 11582
+      "bytes": 11590
     },
     {
       "file": "assets/fenr/wolf/run/sprite-sheet-alpha.webp",
-      "bytes": 1824150
+      "bytes": 2198050
     },
     {
       "file": "assets/fonts/Rajdhani-Bold.ttf",
@@ -516,15 +516,15 @@
     },
     {
       "file": "assets/haldor/manifest.js",
-      "bytes": 11613
+      "bytes": 11620
     },
     {
       "file": "assets/haldor/run/sprite-sheet-alpha.webp",
-      "bytes": 1840070
+      "bytes": 2236708
     },
     {
       "file": "assets/haldor/ui/cutin.webp",
-      "bytes": 160420
+      "bytes": 154652
     },
     {
       "file": "assets/haldor/ui/fx-quake.webp",
@@ -560,7 +560,7 @@
     },
     {
       "file": "assets/haldor/ui/portrait.webp",
-      "bytes": 49916
+      "bytes": 44148
     },
     {
       "file": "assets/isolde/audio/isolde-ultimate.mp3",
@@ -576,11 +576,11 @@
     },
     {
       "file": "assets/isolde/manifest.js",
-      "bytes": 11936
+      "bytes": 11950
     },
     {
       "file": "assets/isolde/run/sprite-sheet-alpha.webp",
-      "bytes": 975044
+      "bytes": 1187132
     },
     {
       "file": "assets/isolde/ui/cutin.webp",
@@ -624,15 +624,15 @@
     },
     {
       "file": "assets/mecha/manifest.js",
-      "bytes": 11274
+      "bytes": 11281
     },
     {
       "file": "assets/mecha/run/sprite-sheet-alpha.webp",
-      "bytes": 1334776
+      "bytes": 1614816
     },
     {
       "file": "assets/menu/arco-select.webp",
-      "bytes": 95952
+      "bytes": 90184
     },
     {
       "file": "assets/menu/azure-harbor.webp",
@@ -640,7 +640,7 @@
     },
     {
       "file": "assets/menu/cora-select.webp",
-      "bytes": 192304
+      "bytes": 186536
     },
     {
       "file": "assets/menu/edda-select.webp",
@@ -652,11 +652,11 @@
     },
     {
       "file": "assets/menu/fenr-select.webp",
-      "bytes": 194640
+      "bytes": 188872
     },
     {
       "file": "assets/menu/haldor-select.webp",
-      "bytes": 185554
+      "bytes": 179786
     },
     {
       "file": "assets/menu/home-art.webp",
@@ -664,7 +664,7 @@
     },
     {
       "file": "assets/menu/isolde-select.webp",
-      "bytes": 134134
+      "bytes": 128366
     },
     {
       "file": "assets/menu/mira-select.webp",
@@ -680,7 +680,7 @@
     },
     {
       "file": "assets/menu/nib-select.webp",
-      "bytes": 111836
+      "bytes": 106068
     },
     {
       "file": "assets/menu/rhea-select.webp",
@@ -712,11 +712,11 @@
     },
     {
       "file": "assets/mira/manifest.js",
-      "bytes": 11955
+      "bytes": 11969
     },
     {
       "file": "assets/mira/run/sprite-sheet-alpha.webp",
-      "bytes": 689382
+      "bytes": 836028
     },
     {
       "file": "assets/mira/ui/cutin.webp",
@@ -772,11 +772,11 @@
     },
     {
       "file": "assets/naja/manifest.js",
-      "bytes": 11582
+      "bytes": 11588
     },
     {
       "file": "assets/naja/run/sprite-sheet-alpha.webp",
-      "bytes": 1310296
+      "bytes": 1616806
     },
     {
       "file": "assets/naja/ui/cutin.webp",
@@ -832,11 +832,11 @@
     },
     {
       "file": "assets/nib/manifest.js",
-      "bytes": 11935
+      "bytes": 11938
     },
     {
       "file": "assets/nib/run/sprite-sheet-alpha.webp",
-      "bytes": 885620
+      "bytes": 1068502
     },
     {
       "file": "assets/nib/ui/cutin.webp",
@@ -892,11 +892,11 @@
     },
     {
       "file": "assets/rhea/manifest.js",
-      "bytes": 11905
+      "bytes": 11913
     },
     {
       "file": "assets/rhea/run/sprite-sheet-alpha.webp",
-      "bytes": 519430
+      "bytes": 622664
     },
     {
       "file": "assets/rhea/ui/cutin.webp",
@@ -992,11 +992,11 @@
     },
     {
       "file": "assets/solan/manifest.js",
-      "bytes": 11895
+      "bytes": 11906
     },
     {
       "file": "assets/solan/run/sprite-sheet-alpha.webp",
-      "bytes": 1197102
+      "bytes": 1452426
     },
     {
       "file": "assets/solan/ui/cutin.webp",
@@ -1104,11 +1104,11 @@
     },
     {
       "file": "assets/zanni/manifest.js",
-      "bytes": 11748
+      "bytes": 11754
     },
     {
       "file": "assets/zanni/run/sprite-sheet-alpha.webp",
-      "bytes": 1661510
+      "bytes": 2004536
     },
     {
       "file": "assets/zanni/ui/cutin.webp",
@@ -1152,7 +1152,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 16139
+      "bytes": 16142
     },
     {
       "file": "sw.js",
