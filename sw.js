@@ -1,7 +1,8 @@
 /* PERANG DEDEMIT service worker (from Aether Clash). preload.js fills the 'dedemit-assets' cache (with content hashes) on each visit, so this
    worker only has to answer from it:
    - pictures and fonts: cache first (instant screens, works offline);
-   - pages, CSS and JS: network first, so a new deploy shows up at once; the cache is the offline fallback;
+   - pages, CSS and JS: network first and always revalidated with the server (cache:'no-cache', so neither the HTTP cache
+     nor a CDN max-age can hand back an old copy after a deploy); the cache is the offline fallback;
    - audio/video and range requests: left to the network and HTTP cache (Safari needs real 206 range answers). */
 // Renamed for PERANG DEDEMIT so no picture from the old Aether Clash cache is ever served again.
 const CACHE = 'dedemit-assets';
@@ -20,5 +21,5 @@ self.addEventListener('fetch', event => {
     event.respondWith(fromCache().then(hit => hit || fetch(req)));
     return;
   }
-  event.respondWith(fetch(req).catch(() => fromCache().then(hit => hit || Response.error())));
+  event.respondWith(fetch(req, { cache: 'no-cache' }).catch(() => fromCache().then(hit => hit || Response.error())));
 });

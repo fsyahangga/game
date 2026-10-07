@@ -1,6 +1,6 @@
 {
   "files": 289,
-  "bytes": 39338581,
+  "bytes": 39339164,
   "list": [
     {
       "file": "index.html",
@@ -20,7 +20,7 @@
     },
     {
       "file": "preload.js",
-      "bytes": 4441
+      "bytes": 4469
     },
     {
       "file": "ghosts.js",
@@ -196,7 +196,7 @@
     },
     {
       "file": "assets/audio/announcer/manifest.js",
-      "bytes": 3737
+      "bytes": 4153
     },
     {
       "file": "assets/audio/announcer/mira_wins.mp3",
@@ -1156,7 +1156,7 @@
     },
     {
       "file": "sw.js",
-      "bytes": 1798
+      "bytes": 1937
     }
   ]
 }

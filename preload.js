@@ -19,7 +19,7 @@
     status.textContent = downloading ? `Mengunduh aset game · ${Math.floor(p * 100)}% · ${mb(got)} / ${mb(list.total)} MB` : 'Memuat…';
   }
   const secure = window.isSecureContext && 'caches' in window;
-  if (secure && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (secure && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
   const INDEX = '__aether-index';
 
   async function run() {

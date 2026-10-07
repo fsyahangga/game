@@ -11,7 +11,7 @@ internet connection (edge-tts sends the text to Microsoft's speech service). Aft
 node guide/tools/update_precache.mjs
 To use a recorded or ElevenLabs take instead, drop it over the MP3 and rerun with --manifest-only.
 """
-import asyncio, json, subprocess, sys, tempfile
+import asyncio, hashlib, json, subprocess, sys, tempfile
 from pathlib import Path
 import numpy as np
 from scipy import signal
@@ -73,7 +73,9 @@ def build(cue, text, tmp):
     ffmpeg('-i', str(wav), '-codec:a', 'libmp3lame', '-b:a', '96k', str(OUT / f'{cue}.mp3'))
 
 def write_manifest():
-    clips = {cue: {'file': f'assets/audio/announcer/{cue}.mp3', 'duration': duration(OUT / f'{cue}.mp3'), 'text': text}
+    # ?v=<content hash>: audio skips the service worker, so a new take must get a new URL to beat the HTTP cache.
+    ver = lambda cue: hashlib.sha256((OUT / f'{cue}.mp3').read_bytes()).hexdigest()[:10]
+    clips = {cue: {'file': f'assets/audio/announcer/{cue}.mp3?v={ver(cue)}', 'duration': duration(OUT / f'{cue}.mp3'), 'text': text}
              for cue, text in CUES.items()}
     man = {'voice': {'name': 'Ardi', 'voice_id': VOICE['voice'], 'provider': 'Microsoft Edge TTS (edge-tts)',
                      'language': 'Bahasa Indonesia', 'prosody': {k: v for k, v in VOICE.items() if k != 'voice'},
