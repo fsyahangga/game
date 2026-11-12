@@ -132,3 +132,13 @@ html.touch .install-pill{margin-right:56px}
 @media(max-height:500px) and (min-width:620px){.mana-frame{margin-top:4px}.mana-track{height:11px}.mana-tag,.mana-frame b{font-size:9px}.mana-frame b{min-width:46px}}
 @media(max-width:620px){.mana-track{height:10px}.mana-tag,.mana-frame b{font-size:8px}.mana-frame b{min-width:40px}}
 @media (prefers-reduced-motion:reduce){.mana-frame.full .mana-fill,.skill-card.super .skill-art,.tbtn-super{animation:none}}
+
+/* Kitab Dedemit: the super ultimate row (gold, key U) and its cut-in art across the whole entry. */
+.kitab-jurus .kitab-super{margin-top:4px;padding-top:6px;border-top:1px solid #b08a3a66}
+.kitab-jurus .kitab-super dt{color:#7a4d06}
+.kitab-jurus .kitab-super kbd{background:#f3d38a;border-color:#8a5d10;color:#3b2a14}
+.kitab-jurus .kitab-super em{display:block;font-size:13px;color:#7a5a2a}
+.kitab-super-art{grid-column:1/-1;margin:4px 0 0;position:relative;border:3px solid #3b2a14;box-shadow:0 0 0 2px var(--ghost),3px 4px 0 #3b2a1455;overflow:hidden;aspect-ratio:7/3;background:#0b0d12}
+.kitab-super-art img{width:100%;height:100%;object-fit:cover;display:block}
+.kitab-super-art figcaption{position:absolute;left:0;bottom:0;padding:22px 16px 10px;width:70%;background:linear-gradient(90deg,#0b0d12ee,#0b0d1200);color:#fff;font:700 clamp(18px,2.4vw,26px)/1 Rajdhani,Arial,sans-serif;letter-spacing:.5px}
+.kitab-super-art figcaption small{display:block;font-size:11px;letter-spacing:2px;color:var(--ghost);margin-bottom:4px;text-transform:uppercase}

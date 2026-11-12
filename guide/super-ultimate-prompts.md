@@ -1,6 +1,6 @@
 # Prompt Super Ultimate (gambar AI)
 
-Prompt untuk membuat visual **Super Ultimate** (tombol U, terbuka saat mana penuh 200) di generator gambar yang menerima gambar referensi, misalnya ChatGPT atau Gemini. Nama super dan legendanya ada di `SUPERS` dalam [ghosts.js](../ghosts.js); daftarnya juga ada di [ghost-roster.md](ghost-roster.md).
+Prompt untuk membuat visual **Super Ultimate** (tombol U, terbuka saat energi sukma penuh 200) di generator gambar yang menerima gambar referensi, misalnya ChatGPT atau Gemini. Nama super dan legendanya ada di `SUPERS` dalam [ghosts.js](../ghosts.js); daftarnya juga ada di [ghost-roster.md](ghost-roster.md).
 
 > **Sudah dipasang.** Gambar sumber (`.png`) diubah menjadi WebP yang dipakai game oleh [build_super_assets.py](tools/build_super_assets.py): latar dihapus, pose disamakan dengan tinggi karakter, efek dipotong 4 frame, dan cut-in dipotong 1400x600. Setelah mengganti atau menambah gambar, jalankan:
 >

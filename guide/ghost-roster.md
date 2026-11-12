@@ -30,9 +30,9 @@ Urutan tabel sama dengan urutan grid pilih karakter dan Kitab Dedemit.
 
 Angka umum: basic 6/8/12, Skill 1 16 dmg CD 3 s, Skill 2 24 dmg CD 6 s; ultimate sesuai `<slot>-reference.md`.
 
-## Mana dan Super Ultimate (U)
+## Energi Sukma dan Super Ultimate (U)
 
-Setiap serangan pemain yang kena mengisi bar mana di bawah HP: `4 + damage × 0,5 + panjang kombo (maks. 8)`. Saat mana 200, tombol **Super Ultimate** muncul di deretan jurus (tombol U, atau tombol SUPER di layar sentuh). Super membekukan arena dengan cut-in, lalu lima hantaman pilar warna dedemit (10/10/10/12/26 = 68 damage, hantaman terakhir menjatuhkan lawan). Hantamannya menembus kebal, jatuh, dan tangkisan; pemain kebal selama super. Angkanya di `BALANCE.mana` dan `BALANCE.superUlt` di game.js; mana direset tiap ronde. CPU belum punya mana.
+Setiap serangan pemain yang kena mengisi bar energi sukma di bawah HP (di kode: `mana`): `6 + damage × 1,5 + panjang kombo (maks. 8) × 1,5`, dan saat terkena pukulan bertambah 1,2 × damage yang diterima. Bar biasanya penuh setelah 8–10 pukulan kena, jauh sebelum HP lawan habis. Saat energi sukma 200, tombol **Super Ultimate** muncul di deretan jurus (tombol U, atau tombol SUPER di layar sentuh). Super membekukan arena dengan cut-in, lalu lima hantaman pilar warna dedemit (10/10/10/12/26 = 68 damage, hantaman terakhir menjatuhkan lawan). Hantamannya menembus kebal, jatuh, dan tangkisan; pemain kebal selama super. Angkanya di `BALANCE.mana` dan `BALANCE.superUlt` di game.js; energi sukma terbawa ke ronde berikutnya dan baru kosong saat pertandingan baru. CPU belum punya energi sukma. Super tiap dedemit juga tampil di Kitab Dedemit.
 
 | Dedemit | Super Ultimate | Dasar legenda |
 | --- | --- | --- |
