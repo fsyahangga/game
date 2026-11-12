@@ -17,6 +17,21 @@ if (existsSync('assets/ghosts/super')) for (const f of readdirSync('assets/ghost
 for (const p of EXTRA) if (!paths.includes(p)) paths.splice(Math.max(0, paths.indexOf('game.js')), 0, p);
 
 const hash = buf => createHash('sha1').update(buf).digest('hex').slice(0, 12);
+
+// Version stamps: every local .js/.css link in the pages gets ?v=<content hash>, so once a page is fresh it never pairs
+// with a stale copy of a script or stylesheet (GitHub Pages' CDN keeps each URL up to 10 minutes). precache.js, which
+// this script writes last, gets the stamp of all other runtime files. preload.js and sw.js look files up without the
+// query string, so the offline cache keeps working.
+const PAGES = ['index.html', 'mobile.html'];
+const stamp = hash(Buffer.from(paths.filter(p => !PAGES.includes(p) && existsSync(p)).map(p => hash(readFileSync(p))).join('')));
+for (const page of PAGES) {
+  if (!existsSync(page)) continue;
+  const html = readFileSync(page, 'utf8');
+  const out = html.replace(/(\b(?:src|href)=")([^"?#:]+\.(?:js|css))(?:\?v=[0-9a-f]+)?"/g, (m, attr, file) =>
+    file === 'precache.js' ? `${attr}${file}?v=${stamp}"` : existsSync(file) ? `${attr}${file}?v=${hash(readFileSync(file))}"` : m);
+  if (out !== html) writeFileSync(page, out);
+}
+
 const files = [], missing = [];
 for (const p of paths) {
   if (!existsSync(p)) { missing.push(p); continue; }
