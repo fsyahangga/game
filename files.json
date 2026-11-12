@@ -1,6 +1,6 @@
 {
   "files": 289,
-  "bytes": 39352161,
+  "bytes": 39352297,
   "list": [
     {
       "file": "index.html",
@@ -84,7 +84,7 @@
     },
     {
       "file": "game.js",
-      "bytes": 179959
+      "bytes": 180095
     },
     {
       "file": "menu.js",

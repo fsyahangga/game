@@ -923,7 +923,8 @@
     if (dummy.bindTime > 0) { dummy.bindTime -= dt; dummy.vx = 0; }
     if (dummy.state === 'hurt' && !(dummy.bindTime > 0) && dummy.stateTime > (F && aiEnabled && match?.mode === 'versus' ? .5 : .4)) { dummy.state = dummy.y < CONFIG.groundY ? 'jump' : 'idle'; dummy.stateTime = 0; if (F && aiEnabled && match?.mode === 'versus') dummy.invuln = Math.max(dummy.invuln, cpuProfile().immunity); }
     if (dummy.state !== 'down' && (dummy.y < CONFIG.groundY || dummy.vy < 0)) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dummy.jumps = 0; cpu.doubleAt = 0; if (dummy.state === 'jump') { dummy.state = 'idle'; dummy.stateTime = 0; dummy.landTime = CONFIG.landTime; } dust(dummy.x, 8); } }
-    if (dummy.state === 'down') { if (dummy.y < CONFIG.groundY || dummy.vy < 0) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dust(dummy.x, 24); trauma = Math.min(1, trauma + .3); } } if (dummy.stateTime > 1.7 && match?.mode!=='versus') { dummy.state = 'recover'; dummy.stateTime = 0; } }
+    if (dummy.state === 'down') { if (dummy.y < CONFIG.groundY || dummy.vy < 0) { dummy.vy += CONFIG.gravity * dt; dummy.y += dummy.vy * dt; if (dummy.y >= CONFIG.groundY) { dummy.y = CONFIG.groundY; dummy.vy = 0; dust(dummy.x, 24); trauma = Math.min(1, trauma + .3); } } if (dummy.stateTime > 1.7 && (match?.mode!=='versus' || !dummy.ko)) { dummy.state = 'recover'; dummy.stateTime = 0; } }
+    // A knockdown that is not a K.O. (the super's last strike) gets back up in versus too; only a real K.O. stays down.
     if (dummy.state === 'recover' && dummy.stateTime > .4) { dummy.state = 'idle'; dummy.stateTime = 0; if(dummy.ko) dummy.damage = 0; dummy.ko=false; dummy.invuln = .5; }
     if(F)updateFenrAI(dt);
   }
