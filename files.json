@@ -1,10 +1,10 @@
 {
   "files": 289,
-  "bytes": 39339164,
+  "bytes": 39350864,
   "list": [
     {
       "file": "index.html",
-      "bytes": 16831
+      "bytes": 17729
     },
     {
       "file": "mobile.html",
@@ -24,11 +24,11 @@
     },
     {
       "file": "ghosts.js",
-      "bytes": 12099
+      "bytes": 14644
     },
     {
       "file": "dedemit.css",
-      "bytes": 11257
+      "bytes": 13494
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -84,7 +84,7 @@
     },
     {
       "file": "game.js",
-      "bytes": 173474
+      "bytes": 179425
     },
     {
       "file": "menu.js",
@@ -100,7 +100,7 @@
     },
     {
       "file": "touch.js",
-      "bytes": 4896
+      "bytes": 4965
     },
     {
       "file": "fenr.js",

@@ -30,6 +30,27 @@ Urutan tabel sama dengan urutan grid pilih karakter dan Kitab Dedemit.
 
 Angka umum: basic 6/8/12, Skill 1 16 dmg CD 3 s, Skill 2 24 dmg CD 6 s; ultimate sesuai `<slot>-reference.md`.
 
+## Mana dan Super Ultimate (U)
+
+Setiap serangan pemain yang kena mengisi bar mana di bawah HP: `4 + damage × 0,5 + panjang kombo (maks. 8)`. Saat mana 200, tombol **Super Ultimate** muncul di deretan jurus (tombol U, atau tombol SUPER di layar sentuh). Super membekukan arena dengan cut-in, lalu lima hantaman pilar warna dedemit (10/10/10/12/26 = 68 damage, hantaman terakhir menjatuhkan lawan). Hantamannya menembus kebal, jatuh, dan tangkisan; pemain kebal selama super. Angkanya di `BALANCE.mana` dan `BALANCE.superUlt` di game.js; mana direset tiap ronde. CPU belum punya mana.
+
+| Dedemit | Super Ultimate | Dasar legenda |
+| --- | --- | --- |
+| Pocong | Liang Lahat | bangkit dari kubur karena tali kafan tak dilepas |
+| Kuntilanak | Kuntilanak Merah | wujud kuntilanak paling ganas |
+| Sundel Bolong | Lubang Dendam | lubang di punggung, dendam yang belum terbalas |
+| Wewe Gombel | Pulang ke Bukit Gombel | sarangnya di Bukit Gombel, Semarang |
+| Genderuwo | Hujan Batu Genderuwo | rumah dihujani batu tanpa pelempar |
+| Eyang Sukmo Capo | Aji Sukma Sejati | ajian pamungkas penjaga keramat |
+| Leyak | Titah Calon Arang | Calon Arang, ratu leyak dari Girah |
+| Kuyang | Terbang Menjelang Subuh | kepala harus kembali sebelum fajar |
+| Palasik | Palasik Kuduang | palasik yang kepalanya lepas dari badan |
+| Tuyul | Pasukan Tuyul Gundul | pesugihan dengan banyak tuyul |
+| Jenglot | Ilmu Batara Karang | ilmu hitam asal-muasal jenglot |
+| Begu Ganjang | Jangan Menengadah | makin ditatap makin tinggi |
+
+Nama, teks cut-in, dan legenda super ada di `SUPERS` dalam [ghosts.js](../ghosts.js).
+
 ## Tali Pocong (mekanik baru)
 
 Proyektil yang punya properti `bind` (detik) mengikat targetnya: pemain mendapat tambahan `hurtTime`, CPU ditahan oleh `bindTime`, keduanya berhenti bergeser, dan tiga lilitan tali digambar mengikuti target. Nilainya `piercer.bind` di [isolde.js](../isolde.js) (0,7 s); kodenya `bindHit` di game.js. Jurus lain bisa memakai mekanik yang sama dengan menambahkan `bind` pada proyektilnya.

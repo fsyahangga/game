@@ -105,3 +105,25 @@ html.touch .install-pill{margin-right:56px}
 .install-steps{margin:0 0 12px;padding-left:22px;display:grid;gap:8px;font-size:17px;line-height:1.3;color:#d9d3c2}
 .install-steps b{color:var(--kunyit)}
 #install-help .menu-primary{width:100%;background:var(--kunyit);border-color:#f3d48a;color:#1a140a}
+
+/* Mana bar (under the player's HP) and the SUPER ULTIMATE card that appears when it is full (game.js BALANCE.mana). */
+.mana-frame{display:flex;align-items:center;gap:8px;margin-top:5px}
+.mana-track{flex:1;height:9px;padding:2px;background:#0b1013;border:1px solid #7f8fb08c;transform:skewX(-15deg);overflow:hidden}
+.mana-fill{height:100%;width:0;background:linear-gradient(180deg,#d9e6ff 0,#8fb1ff 35%,#4a64d8 40%,#3a4fb8);box-shadow:inset 0 1px 0 #fff8;transition:width .16s ease-out}
+.mana-frame b{font-size:9px;letter-spacing:1.2px;font-weight:700;color:#b9c8ff;white-space:nowrap;text-shadow:1px 1px 2px #0b1a13}
+.mana-frame.full .mana-fill{background:linear-gradient(90deg,#ffd76a,#fff4c9,#ff9f4a,#ffd76a);background-size:200% 100%;animation:mana-shine 1s linear infinite}
+.mana-frame.full b{color:#ffe08a}
+@keyframes mana-shine{to{background-position:-200% 0}}
+.skill-deck:has(.skill-card.super:not([hidden])){width:auto}
+.skill-card.super[hidden]{display:none}
+.skill-card.super .skill-art{border-color:#ffd76a;box-shadow:0 0 14px #ffb84acc,inset 0 0 0 2px #ffd76a88;animation:super-glow 1.1s ease-in-out infinite alternate}
+.skill-card.super kbd{background:#ffd76a}
+.skill-card.super .skill-name{color:#ffe08a;font-size:9px;letter-spacing:.2px}
+.skill-card.super.fresh{animation:super-pop .45s cubic-bezier(.2,.9,.25,1.4) both}
+@keyframes super-glow{from{filter:brightness(1)}to{filter:brightness(1.3)}}
+@keyframes super-pop{from{transform:scale(.4) translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.tbtn-super{right:calc(var(--big)/2 + var(--r)*1.15 - var(--small)/2);bottom:calc(var(--big)/2 + var(--r)*.95 - var(--small)/2);border-color:#ffd76a;box-shadow:0 0 16px #ffb84acc;animation:super-glow 1.1s ease-in-out infinite alternate}
+.tbtn-super[hidden]{display:none}
+.tbtn-super b{position:absolute;left:0;right:0;bottom:4px;z-index:3;font:700 10px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.6px;color:#ffe9a8;text-shadow:0 1px 2px #000;pointer-events:none}
+@media(max-height:500px) and (min-width:620px){.mana-frame{margin-top:3px}.mana-track{height:7px}.mana-frame b{font-size:8px}}
+@media (prefers-reduced-motion:reduce){.mana-frame.full .mana-fill,.skill-card.super .skill-art,.tbtn-super{animation:none}}

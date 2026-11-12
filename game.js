@@ -12,7 +12,11 @@
     skill1: {damage:16,cooldown:3,knockback:140},
     skill2: {damage:24,cooldown:6,knockback:220,radius:220},
     ultimate: {damagePerDrone:12,cooldown:18,castTime:.50,knockback:190},
-    dummyMax:200, heroMax:200, hpPerBar:100, basicCooldownRefund:.05
+    dummyMax:200, heroMax:200, hpPerBar:100, basicCooldownRefund:.05,
+    // Mana: every hit that lands adds perHit + damage*perDamage + (combo length, up to comboCap)*perCombo. At max the
+    // SUPER ULTIMATE (U) appears: a freeze-frame cut-in, then five strikes on the rival (68 damage, the last knocks down).
+    mana: {max:200, perHit:4, perDamage:.5, perCombo:1, comboCap:8},
+    superUlt: {cutin:1.05, strikes:[.15,.4,.65,.9,1.25], damage:[10,10,10,12,26], duration:1.9}
   };
   const cooldownMax = { skill1:BALANCE.skill1.cooldown, skill2:BALANCE.skill2.cooldown, ultimate:BALANCE.ultimate.cooldown };
   const skillNames = window.GHOSTS?.arco ? { skill1: window.GHOSTS.arco.names[1], skill2: window.GHOSTS.arco.names[2], ultimate: window.GHOSTS.arco.names[3] } : { skill1: 'AETHER BOLT', skill2: 'SEISMIC DRIVE', ultimate: 'HELIOS SQUADRON' };
@@ -31,12 +35,13 @@
   let seed = 18741, stepCount = 0, totalDamage = 0, comboHits = 0, bestCombo = 0, comboDamage = 0, comboTimer = 0, fps = 60;
   const keys = new Set(), taps = { a: -10, d: -10, s: -10 };
   const particles = [], effects = [], projectiles = [], damageNumbers = [];
+  let superUlt = null, manaReadyPulse = 0;
   let squad = null, enemySquad = null, parade = null, enemyParade = null, flock = null, enemyFlock = null, serpent = null, enemySerpent = null, quake = null, enemyQuake = null, finale = null, enemyFinale = null, skyfall = null, enemySkyfall = null, orrery = null, enemyOrrery = null, sunroar = null, enemySunroar = null, delivery = null, enemyDelivery = null, tortoise = null, enemyTortoise = null;
   const rechargePulse = {skill1:0,skill2:0,ultimate:0};
   // CPU memory: what it has already read about the player, and its current plan.
   let cpu = { seen: new WeakMap(), decided: new WeakSet(), read: null, followPunish: null, heroActionAt: 0, heroAction: null, airborne: false, airAt: 0, antiAirRead: false, plan: null, doubleAt: 0 };
   const SQUAD = { duration: 2.85, cutinDuration: .78, firstShot: 1.50, shotGap: .095, departure: 2.24, droneWidth: 112 };
-  const hero = { x: 350, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance:0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime:0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } };
+  const hero = { x: 350, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance:0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime:0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, mana: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } };
   const dummy = { x: 915, y: CONFIG.groundY, vx: 0, vy: 0, state: 'idle', stateTime: 0, damage: 0, ko:false, flash: 0, invuln: 0, angle: 0, respawnX: 915 };
   function random() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
   function loadImage(name, src, required = false) { return new Promise(resolve => { const img = new Image(); img.onload = () => { images[name] = img; resolve(true); }; img.onerror = () => resolve(!required); img.src = src; }); }
@@ -172,7 +177,7 @@
     for(const [i,n] of notes.entries()){const at=audio.currentTime+i*gap,o=audio.createOscillator(),g=audio.createGain();o.type=kind==='locked'||kind==='pick'?'triangle':'sine';o.frequency.setValueAtTime(n,at);g.gain.setValueAtTime(.001,at);g.gain.exponentialRampToValueAtTime(peak,at+.005);g.gain.exponentialRampToValueAtTime(.001,at+tail);o.connect(g);g.connect(master);o.start(at);o.stop(at+tail+.015);audioSources++;}
   }
   function setMenuOpen(value) {
-    menuOpen=!!value;clearInput();if(menuOpen){systemAnnouncer?.clear();stopUltimateVoice();squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;projectiles.length=effects.length=0;setPaused(false);}
+    menuOpen=!!value;clearInput();if(menuOpen){systemAnnouncer?.clear();stopUltimateVoice();superUlt=squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;projectiles.length=effects.length=0;setPaused(false);}
     document.body.classList.toggle('in-menu',menuOpen);$('#front-menu').hidden=!menuOpen;
     window.FrontEnd?.syncBackground();
   }
@@ -198,7 +203,7 @@
     for(const event of Rules.tick(match,dt,hero.hp,currentDummyHP())) {
       if(event.type==='cue')emitRoundCue(event.cue,event.round);
       if(event.type==='round-end') {
-        clearInput();stopUltimateVoice();squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;hero.action=dummy.action=null;projectiles.length=effects.length=0;hitstop=cinematic=trauma=0;
+        clearInput();stopUltimateVoice();superUlt=squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;hero.action=dummy.action=null;projectiles.length=effects.length=0;hitstop=cinematic=trauma=0;
         if(hero.hp<=0)state('down');else state('idle');if(currentDummyHP()>0){dummy.state='idle';dummy.stateTime=0;}
         match.endText=event.doubleKO?'SAMA-SAMA TUMBANG':event.timeout?'WAKTU HABIS':'TUMBANG';announceTimer=0;sound('heavy');
         const call=event.doubleKO?'double_ko':event.timeout?'time_up':'ko';
@@ -299,33 +304,35 @@
     if (key === 'w') jump();
     if (key === 's') { if (time - taps.s <= CONFIG.doubleTapWindow) jump(true); taps.s = time; }
     if (key === ' ') startAttack();
-    if (key === 'i') cast('skill1'); if (key === 'o') cast('skill2'); if (key === 'p') cast('ultimate');
+    if (key === 'i') cast('skill1'); if (key === 'o') cast('skill2'); if (key === 'p') cast('ultimate'); if (key === 'u') startSuper();
   }
   function release(key) { key = key.toLowerCase(); keys.delete(key); if ((key === 'a' && hero.runDirection === -1) || (key === 'd' && hero.runDirection === 1)) hero.runDirection = 0; }
   function clearInput() { keys.clear(); hero.runDirection = 0; taps.a = taps.d = taps.s = -10; }
   function resetCombat() {
     systemAnnouncer?.clear();
     stopUltimateVoice();
-    Object.assign(hero, { x: 350, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance:0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime:0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } });
+    Object.assign(hero, { x: 350, y: CONFIG.groundY, vx: 0, vy: 0, facing: 1, grounded: true, jumps: 0, state: 'idle', animTime: 0, walkPhase: 0, smokeDistance:0, action: null, runDirection: 0, hp: BALANCE.heroMax, koTime:0, invuln: 0, hurtTime: 0, doublePose: 0, rollDuration: CONFIG.rollDuration, rollBuffer: null, airTime: 0, mana: 0, cooldowns: { skill1: 0, skill2: 0, ultimate: 0 } });
     Object.assign(dummy, { x: 915, y: CONFIG.groundY, vx: 0, vy: 0, state: 'idle', stateTime: 0, damage: 0, ko:false, flash: 0, invuln: 0, angle: 0 });
     if(F) {F.reset(hero);F.reset(dummy);Object.assign(dummy,{facing:-1,action:null,cooldowns:{skill1:0,skill2:0,ultimate:0},aiThink:.4,aiTime:0,aiChain:0,walkPhase:0,jumps:0});cpu={seen:new WeakMap(),decided:new WeakSet(),read:null,heroActionAt:0,heroAction:null,airborne:false,airAt:0,antiAirRead:false,plan:null,doubleAt:0};syncPlayerForm();}
     fenrCutin=null;hudIdentity='';
     particles.length = effects.length = projectiles.length = damageNumbers.length = 0; totalDamage = comboHits = bestCombo = comboDamage = comboTimer = hitstop = trauma = cinematic = 0; clearInput(); setPaused(false); announce('LATIHAN DIMULAI', 1.25);
-    squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null;
+    superUlt = null; manaReadyPulse = 0; squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null;
     for(const name of Object.keys(rechargePulse)) rechargePulse[name]=0;
   }
   function reset() {
     if(Rules)match=Rules.create(match?.mode||'training');
     resetCombat();if(match?.mode==='versus'){announceTimer=0;emitRoundCue('round',1);}
   }
-  function hitDummy(damage, power, color, sourceX, impactY, knockdown = false, freezeWorld = true, shake = 1) {
-    if (menuOpen || (match && match.phase!=='fight') || dummy.invuln > 0 || dummy.state === 'down' || dummy.state === 'recover') return false;
-    if (dummy.action?.guard && shellGuard(dummy)) return false;
+  // force: the super ultimate's strikes land through invulnerability, knockdown and guards, and do not refill mana.
+  function hitDummy(damage, power, color, sourceX, impactY, knockdown = false, freezeWorld = true, shake = 1, force = false) {
+    if (menuOpen || (match && match.phase!=='fight')) return false;
+    if (!force && (dummy.invuln > 0 || dummy.state === 'down' || dummy.state === 'recover')) return false;
+    if (!force && dummy.action?.guard && shellGuard(dummy)) return false;
     const dir = sourceX <= dummy.x ? 1 : -1;
     dummy.damage += damage; totalDamage += damage; comboHits++; bestCombo = Math.max(bestCombo, comboHits); comboDamage += damage; comboTimer = 2.3;
     // Versus combo limit: after comboCap hits in one continuous stun the CPU gets its immunity (like the player's),
     // so a re-started chain cannot loop it to K.O. Easy has no limit.
-    const cap = F && aiEnabled && match?.mode === 'versus' ? cpuProfile().comboCap : 0;
+    const cap = !force && F && aiEnabled && match?.mode === 'versus' ? cpuProfile().comboCap : 0;
     dummy.stunHits = dummy.state === 'hurt' ? (dummy.stunHits || 0) + 1 : 1;
     if (cap && dummy.stunHits >= cap) dummy.invuln = .5 + cpuProfile().immunity;
     dummy.flash = 0; dummy.vx = dir * power; dummy.stateTime = 0; dummy.state = 'hurt';
@@ -337,7 +344,82 @@
     spawnParticles(dummy.x - dir * 21, impactY, color, damage >= 30 ? 22 : 14, damage >= 30 ? 320 : 220);
     effects.push({ type: 'impact', x: dummy.x - dir * 15, y: impactY, life: .2, maxLife: .2, color, heavy: damage >= 30 });
     if (dummy.damage >= BALANCE.dummyMax || knockdown) { dummy.ko=dummy.damage>=BALANCE.dummyMax; dummy.state = 'down'; dummy.vy = -330; dummy.vx = dir * 290; dummy.fallDirection = dir; announce(dummy.ko?'K.O.':'KNOCKDOWN', .9); }
+    if (!force) gainMana(damage);
     sound(damage >= 30 ? 'heavy' : 'hit'); return true;
+  }
+  function gainMana(damage) {
+    const M = BALANCE.mana, before = hero.mana;
+    if (superUlt || before >= M.max) return;
+    hero.mana = Math.min(M.max, before + M.perHit + damage * M.perDamage + Math.min(comboHits, M.comboCap) * M.perCombo);
+    if (hero.mana >= M.max) { manaReadyPulse = 1.4; announce('SUPER ULTIMATE SIAP · U', 1.4); }
+  }
+  function superInfo(id = selectedCharacter) {
+    const g = window.GHOSTS?.[id];
+    return { ...(g?.super || { name: 'SUPER ULTIMATE', top: 'SUPER', bottom: 'ULTIMATE', detail: 'SERANGAN PAMUNGKAS' }), ghost: g?.name || String(id).toUpperCase(), color: g?.color || '#ffe2a0' };
+  }
+  function startSuper() {
+    if (!canAct() || superUlt || hero.mana < BALANCE.mana.max) return false;
+    if (hero.action?.type === 'attack') hero.action = null;
+    if (hero.action || hero.transformPending > 0) return false;
+    const info = superInfo(), U = BALANCE.superUlt;
+    hero.mana = 0; hero.runDirection = 0; hero.vx = 0; hero.rollBuffer = null; hero.doublePose = 0;
+    hero.invuln = Math.max(hero.invuln, U.cutin + U.duration + .3);
+    hero.action = { type: 'super', name: 'ultimate', t: 0, duration: .7, fired: true, hit: false };
+    state('ultimate');
+    const art = new Image(); art.src = CUTIN_ART[selectedCharacter] || CUTIN_ART.arco;
+    superUlt = { t: 0, strike: 0, hits: 0, landed: 0, info, art };
+    stopUltimateVoice(); sound('ultimate'); trauma = Math.min(1, trauma + .3);
+    return true;
+  }
+  // Runs every step while a super is out. Returns true during the cut-in, when the rest of the world is frozen.
+  function updateSuper(dt) {
+    const s = superUlt; if (!s) return false;
+    const U = BALANCE.superUlt; s.t += dt;
+    if (s.t < U.cutin) { cinematic = Math.max(cinematic, .45); hero.animTime += dt; return true; }
+    s.strike += dt;
+    while (s.hits < U.strikes.length && s.strike >= U.strikes[s.hits]) {
+      const i = s.hits++, last = i === U.strikes.length - 1, y = dummy.y - 90;
+      effects.push({ type: 'superPillar', x: dummy.x, y: CONFIG.groundY, life: last ? .85 : .5, maxLife: last ? .85 : .5, color: s.info.color, last });
+      if (hitDummy(U.damage[i], last ? 320 : 30, s.info.color, hero.x, y, last, false, last ? 2.4 : 1.1, true)) s.landed++;
+      spawnParticles(dummy.x, y, s.info.color, last ? 42 : 18, last ? 430 : 260);
+      if (last) { sound('ultimate'); cinematic = Math.max(cinematic, .5); }
+    }
+    if (s.strike >= U.duration) superUlt = null;
+    return false;
+  }
+  // Full-screen super cut-in, drawn in screen space over the arena: dark veil, a tilted band in the dedemit's colour with
+  // its cut-in art, and the super name from ghosts.js.
+  function drawSuperCutin() {
+    const s = superUlt, U = BALANCE.superUlt; if (!s || s.t >= U.cutin) return;
+    const t = s.t, c = s.info.color, vw = viewW, vh = viewH;
+    const enter = Math.min(1, t / .16), leave = t > U.cutin - .2 ? (t - (U.cutin - .2)) / .2 : 0;
+    const slide = (1 - Math.pow(enter, 3)) * -vw + Math.pow(leave, 2) * vw;
+    ctx.save();
+    ctx.fillStyle = `rgba(4,6,10,${.72 * Math.min(1, t * 6) * (1 - leave * .6)})`; ctx.fillRect(0, 0, vw, vh);
+    const bandH = Math.max(150, Math.min(260, vh * .34)), cy = vh * .46;
+    ctx.translate(vw / 2 + slide, cy); ctx.rotate(-.05);
+    const g = ctx.createLinearGradient(-vw / 2, 0, vw / 2, 0); g.addColorStop(0, '#0b0d12'); g.addColorStop(.45, '#16121a'); g.addColorStop(1, c + '55');
+    ctx.fillStyle = g; ctx.fillRect(-vw * .6, -bandH / 2, vw * 1.2, bandH);
+    ctx.fillStyle = c; ctx.fillRect(-vw * .6, -bandH / 2 - 5, vw * 1.2, 5); ctx.fillRect(-vw * .6, bandH / 2, vw * 1.2, 5);
+    // speed lines
+    ctx.globalAlpha = .25; ctx.fillStyle = c;
+    for (let i = 0; i < 14; i++) { const y = -bandH / 2 + ((i * 37 + t * 900) % bandH), x = ((i * 211 + t * 2600) % (vw * 1.2)) - vw * .6; ctx.fillRect(x, y, 90 + (i % 4) * 40, 2); }
+    ctx.globalAlpha = 1;
+    if (s.art.complete && s.art.naturalWidth) {
+      ctx.save(); ctx.beginPath(); ctx.rect(-vw * .6, -bandH / 2, vw * .62, bandH); ctx.clip();
+      const ah = bandH * 1.5, aw = ah * s.art.naturalWidth / s.art.naturalHeight;
+      ctx.drawImage(s.art, -vw * .02 - aw + t * 40, -ah * .45, aw, ah); ctx.restore();
+    }
+    const tx = vw * .04, fs = Math.max(34, Math.min(76, bandH * .3));
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `700 ${Math.round(fs * .24)}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = c;
+    ctx.fillText('SUPER ULTIMATE · ' + s.info.ghost, tx, -fs * .95);
+    ctx.font = `900 ${Math.round(fs)}px Rajdhani, system-ui, sans-serif`; ctx.lineWidth = 6; ctx.strokeStyle = '#05060a';
+    ctx.strokeText(s.info.top, tx, -fs * .05); ctx.fillStyle = '#ffffff'; ctx.fillText(s.info.top, tx, -fs * .05);
+    ctx.strokeText(s.info.bottom, tx, fs * .85); ctx.fillStyle = c; ctx.fillText(s.info.bottom, tx, fs * .85);
+    ctx.font = `700 ${Math.round(fs * .22)}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = '#e9e4da';
+    ctx.fillText(s.info.detail, tx, fs * 1.25);
+    ctx.restore();
   }
   function attackRange(index) {
     if(selectedCharacter==='fenr')return F.move(hero,'attack',index).reach;
@@ -780,6 +862,8 @@
     realTime += dt; stepCount++; announceTimer = Math.max(0, announceTimer - dt); trauma = Math.max(0, trauma - dt * 1.35); cinematic = Math.max(0, cinematic - dt);
     updateVisuals(dt);
     for(const name of Object.keys(rechargePulse)) rechargePulse[name]=Math.max(0,rechargePulse[name]-dt);
+    manaReadyPulse = Math.max(0, manaReadyPulse - dt);
+    if (updateSuper(dt)) return;
     if (hitstop > 0) { hitstop -= dt; return; }
     time += dt; hero.animTime += dt; hero.invuln = Math.max(0, hero.invuln - dt); hero.doublePose = Math.max(0, (hero.doublePose || 0) - dt); hero.landTime = Math.max(0, (hero.landTime || 0) - dt);
     if(fenrCutin) {fenrCutin.t+=dt;if(fenrCutin.t>.78)fenrCutin=null;}
@@ -802,7 +886,7 @@
     if (hero.action) {
       const a = hero.action; a.t += dt; state(a.name);
       if((selectedCharacter==='fenr'||selectedCharacter==='mira'||selectedCharacter==='haldor'||selectedCharacter==='isolde'||selectedCharacter==='solan'||selectedCharacter==='nib')&&a.dash&&a.t>a.duration*.2&&a.t<a.duration*.6)hero.vx=hero.facing*a.dash;
-      if (a.type !== 'ultimate' && !a.fired && a.t >= a.duration * (a.hitAt || (a.type === 'skill2' ? .53 : .5))) { a.fired = true; if (a.type === 'attack') meleeHit(a.index); else fireSkill(a); }
+      if (a.type !== 'ultimate' && a.type !== 'super' && !a.fired && a.t >= a.duration * (a.hitAt || (a.type === 'skill2' ? .53 : .5))) { a.fired = true; if (a.type === 'attack') meleeHit(a.index); else fireSkill(a); }
       if (a.fired && a.cancelInto && hero.action === a) { const into = a.cancelInto; hero.action = null; state(hero.grounded ? 'idle' : 'jump'); if (into === 'jump') jump(); }
       if (a.t >= a.duration || (a.type === 'skill1' && a.fired)) { const queued = a.queued && a.index < 3, remaining = Math.max(0, a.queued - 1); const next = (a.index || 0) + 1; hero.action = null; if (queued) { startAttack(next); hero.action.queued = remaining; } else state(hero.grounded ? 'idle' : 'jump'); }
     }
@@ -1503,6 +1587,8 @@
       if (e.type === 'impact' || e.type === 'muzzle') { ctx.rotate(t * .4); ctx.fillStyle = e.color || '#b2ffef'; for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(5, -3); ctx.lineTo((e.heavy ? 60 : 40) * (1 - t) + 7, 0); ctx.lineTo(5, 4); ctx.fill(); } ctx.fillStyle = '#fff9e5'; ctx.fillRect(-7, -7, 14, 14); }
       if (e.type === 'slam') { ctx.strokeStyle = '#ccf0ff'; ctx.lineWidth = 8 * (1 - t) + 1; ctx.beginPath(); ctx.ellipse(0, -2, 35 + t * 240, 10 + t * 35, 0, 0, Math.PI * 2); ctx.stroke(); for (let i = -3; i <= 3; i++) { const height = (95 - Math.abs(i) * 12) * Math.sin(Math.PI * Math.min(t * 1.4, 1)); ctx.fillStyle = i % 2 ? '#76b1c9dd' : '#d7eff2cc'; ctx.beginPath(); ctx.moveTo(i * 48 - 15, 0); ctx.lineTo(i * 48 - 8, -height); ctx.lineTo(i * 48 + 16, -height * .6); ctx.lineTo(i * 48 + 21, 0); ctx.closePath(); ctx.fill(); } }
       if (e.type === 'charge' || e.type === 'ultimate-ring') { ctx.strokeStyle = '#e7bb79'; ctx.lineWidth = 3; const radius = e.type === 'charge' ? 100 - t * 65 : 70 + t * 150; ctx.rotate(realTime * 2); ctx.strokeRect(-radius * .7, -radius * .7, radius * 1.4, radius * 1.4); ctx.rotate(Math.PI / 4); ctx.strokeRect(-radius * .6, -radius * .6, radius * 1.2, radius * 1.2); ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke(); }
+      // Super ultimate strike: a pillar of the dedemit's colour drops on the rival, with a ground ring.
+      if (e.type === 'superPillar') { const k = 1 - t, w = (e.last ? 120 : 70) * (.6 + .4 * k), h = 760; const g = ctx.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, e.color + '00'); g.addColorStop(.7, e.color + 'aa'); g.addColorStop(1, '#ffffffee'); ctx.fillStyle = g; ctx.fillRect(-w / 2, -h, w, h); ctx.fillStyle = '#ffffffcc'; ctx.fillRect(-w * .12, -h, w * .24, h); ctx.strokeStyle = e.color; ctx.lineWidth = 7 * k + 1; ctx.beginPath(); ctx.ellipse(0, -2, 40 + t * (e.last ? 300 : 160), 10 + t * 34, 0, 0, Math.PI * 2); ctx.stroke(); }
       if (e.type === 'drone-laser') {
         const dx = e.endX - e.x, dy = e.endY - e.y, length = Math.hypot(dx, dy);
         ctx.rotate(Math.atan2(dy, dx)); ctx.lineCap = 'round';
@@ -1603,7 +1689,7 @@
     // Light motes provide life without moving the fixed stage or camera.
     for (let i = 0; i < 14; i++) { const x = (i * 117 + realTime * (6 + i % 3)) % W, y = 210 + (i * 47) % 330 + Math.sin(realTime + i) * 9; ctx.fillStyle = i % 2 ? '#fff8cb88' : '#f0ffe94d'; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
     if (hero.x < dummy.x) { drawHero(); drawDummy(); } else { drawDummy(); drawHero(); }
-    drawSquadron(); drawSquadron(enemySquad); drawParade(parade); drawParade(enemyParade); drawMurmuration(flock); drawMurmuration(enemyFlock); drawSerpent(serpent); drawSerpent(enemySerpent); drawEffects(); drawHitboxes(); ctx.restore(); updateHud();
+    drawSquadron(); drawSquadron(enemySquad); drawParade(parade); drawParade(enemyParade); drawMurmuration(flock); drawMurmuration(enemyFlock); drawSerpent(serpent); drawSerpent(enemySerpent); drawEffects(); drawHitboxes(); ctx.restore(); drawSuperCutin(); updateHud();
   }
   // GHOST CLASH: the slot's art paths come from below; every visible label comes from ghosts.js.
   function fighterInfo(id,form) {
@@ -1637,7 +1723,8 @@
       $('#enemy-portrait').src=rival.portrait;$('#enemy-portrait').alt='Portrait '+rival.name;$('#enemy-class').textContent=rival.cls;
       $('#enemy-name').textContent=rival.name;$('#enemy-title').textContent=rival.title;
       $('.fighter-two').setAttribute('aria-label','Status lawan '+rival.name);
-      document.querySelectorAll('.skill-card').forEach((card,i)=>{card.querySelector('.skill-name').textContent=me.names[i];card.querySelector('img').src=me.icons[i];card.setAttribute('aria-label',me.names[i]+', '+['Spasi','I','O','P'][i]);});
+      {const sc=$('.skill-card.super'),si=superInfo();if(sc){sc.querySelector('.skill-name').textContent=si.name;sc.querySelector('img').src=me.icons[3];sc.setAttribute('aria-label','Super ultimate '+si.name+', tombol U');}}
+      document.querySelectorAll('.skill-card:not(.super)').forEach((card,i)=>{card.querySelector('.skill-name').textContent=me.names[i];card.querySelector('img').src=me.icons[i];card.setAttribute('aria-label',me.names[i]+', '+['Spasi','I','O','P'][i]);});
     }
     {const g=window.GHOSTS?.[selectedCharacter];$('#player-status').textContent=g?(selectedCharacter==='fenr'&&hero.form==='wolf'?g.beast.status:g.status):selectedCharacter==='fenr'?(hero.form==='wolf'?'FERAL ACTIVE':'RANGER READY'):selectedCharacter==='mira'?'PILOT READY':selectedCharacter==='cora'?'WINGS READY':selectedCharacter==='naja'?'SANDS READY':selectedCharacter==='haldor'?'FURNACE HOT':selectedCharacter==='zanni'?'SHOWTIME':selectedCharacter==='isolde'?'LANCE READY':selectedCharacter==='rhea'?'ORBITS SET':selectedCharacter==='solan'?'PRIDE READY':selectedCharacter==='nib'?'ON THE ROUTE':selectedCharacter==='edda'?'STEADY AS STONE':'CORE ACTIVE';}
     for(const [actor,id] of [[hero,'player-form-timer'],[dummy,'enemy-form-timer']]){const el=$('#'+id),active=actor.form==='wolf';el.hidden=!active;el.textContent=active?(window.GHOSTS?.fenr?.beast?.timer||'FERAL')+'  '+Math.max(0,actor.formTime).toFixed(1)+' s':'';el.style.setProperty?.('--remaining',String(actor.formTime/F.balance.duration));}
@@ -1675,10 +1762,14 @@
     $('#health-fill').style.width = `${h.front}%`; $('#health-reserve').style.width = `${h.reserve}%`; $('#health-label').textContent = `${hero.hp} / ${BALANCE.heroMax}`;
     $('#guard-fill').style.width = `${dh.front}%`; $('#guard-reserve').style.width = `${dh.reserve}%`; $('#guard-label').textContent = `HP ${currentDummyHP()} / ${BALANCE.dummyMax}`;
     $('#dummy-state').textContent = dummy.ko?'K.O.':({ idle: aiEnabled?'MENGINTAI':'DIAM', hurt: dummy.bindTime>0?'TERIKAT':'KENA', down: 'TUMBANG', recover: 'BANGKIT' })[dummy.state] || (dummy.action?'MENYERANG':'MENDEKAT');
-    $('#combo').classList.toggle('visible', comboHits > 0); $('#combo-count').textContent = comboHits; $('#combo-damage').textContent = `${comboDamage} DAMAGE`; $('#total-damage').innerHTML = `${totalDamage} <small>DMG</small>`;
+    $('#combo').classList.toggle('visible', comboHits > 0 && !(superUlt && superUlt.t < BALANCE.superUlt.cutin)); $('#combo-count').textContent = comboHits; $('#combo-damage').textContent = `${comboDamage} DAMAGE`; $('#total-damage').innerHTML = `${totalDamage} <small>DMG</small>`;
     $('#best-combo').innerHTML = `${bestCombo} <small>HITS</small>`;
     $('#announcement').classList.toggle('visible', announceTimer > 0);
-    for (const card of document.querySelectorAll('.skill-card')) {
+    {const M=BALANCE.mana,full=hero.mana>=M.max,el=$('#mana-fill'),sc=$('.skill-card.super');
+     if(el){el.style.width=`${(hero.mana/M.max*100).toFixed(1)}%`;$('#mana-label').textContent=full?'SUPER SIAP':`MANA ${Math.floor(hero.mana)} / ${M.max}`;$('.mana-frame').classList.toggle('full',full);}
+     if(sc){const show=full||!!superUlt;if(sc.hidden===show)sc.hidden=!show;sc.classList.toggle('fresh',manaReadyPulse>0);sc.classList.toggle('active',!!superUlt);}
+     canvas.dataset.mana=String(Math.floor(hero.mana));canvas.dataset.superUlt=superUlt?'active':full?'ready':'charging';}
+    for (const card of document.querySelectorAll('.skill-card:not(.super)')) {
       const name = card.dataset.action, cd = hero.cooldowns[name] || 0;
       card.classList.toggle('active', name === 'attack' ? hero.action?.type === 'attack' : name === 'ultimate' ? (!!squad || !!parade || !!flock || !!serpent || !!quake || !!finale || !!skyfall || !!orrery || !!sunroar || !!delivery || !!tortoise || (selectedCharacter==='fenr'&&(hero.form==='wolf'||hero.transformPending>0))) : hero.action?.type === name);
       card.classList.toggle('on-cooldown', cd > 0); card.setAttribute('aria-disabled', String(cd > 0 || (name==='ultimate'&&selectedCharacter==='fenr'&&(hero.form==='wolf'||hero.transformPending>0))));
@@ -1710,7 +1801,7 @@
   function setPaused(value) { paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
   function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML=(menuOpen?'Kembali ke menu':'Kembali ke arena')+' <span>↗</span>'; $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
-  const handled = new Set(['w','a','s','d',' ','i','o','p','escape','r']);
+  const handled = new Set(['w','a','s','d',' ','i','o','p','u','escape','r']);
   window.addEventListener('keydown', e => { if (!handled.has(e.key.toLowerCase()) || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return; e.preventDefault(); if (!e.repeat) press(e.key); });
   window.addEventListener('keyup', e => { if (handled.has(e.key.toLowerCase())) { if(!/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName))e.preventDefault(); release(e.key); } });
   window.addEventListener('blur', clearInput); document.addEventListener('visibilitychange', () => { clearInput(); lastTime = 0; accumulator = 0;if(document.hidden)systemAnnouncer?.clear(); syncUltimateVoice(); syncMusic(); });
@@ -1729,11 +1820,11 @@
   $('#sound-test').onclick = () => { unlockAudio(); sound('heavy'); }; // Inside the mobile shell the shell owns fullscreen (it also locks landscape); on its own page the game toggles it itself.
   function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.aetherFullscreen) { window.parent.aetherFullscreen(); return; } } catch (_) {} window.parent.postMessage({ type: 'aether-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); else document.exitFullscreen?.(); }
   $('#fullscreen-btn').onclick = toggleFullscreen;
-  for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else cast(name); canvas.focus({ preventScroll: true }); };
+  for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else if (name === 'super') startSuper(); else cast(name); canvas.focus({ preventScroll: true }); };
   function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; draw(); requestAnimationFrame(tick); }
   // Deterministic QA interface: set manual=true, reset(), press/release(), advance(seconds).
   // Positions represent feet. No networking or persistent state is changed by this interface.
-  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, clearInput, draw, manual: false,
+  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name } : null, clearInput, draw, manual: false,
     advance(seconds) { for (let i = 0; i < Math.round(seconds * 120); i++) step(1 / 120); draw(); return this.snapshot(); },
     snapshot() { return { ready, paused, settingsOpen, menuOpen, selectedCharacter, opponentCharacter, difficulty, stageId, match:match?{...match}:null,roundCues:[...roundCues],aiEnabled, time, stepCount, hero: JSON.parse(JSON.stringify(hero)), dummy: { ...dummy }, healthBars:{hero:hpLayers(hero.hp),dummy:hpLayers(currentDummyHP())}, squad: squad ? JSON.parse(JSON.stringify(squad)) : null, enemySquad:enemySquad?JSON.parse(JSON.stringify(enemySquad)):null, parade: parade ? JSON.parse(JSON.stringify(parade)) : null, enemyParade: enemyParade ? JSON.parse(JSON.stringify(enemyParade)) : null, flock: flock ? JSON.parse(JSON.stringify(flock)) : null, enemyFlock: enemyFlock ? JSON.parse(JSON.stringify(enemyFlock)) : null, serpent: serpent ? JSON.parse(JSON.stringify(serpent)) : null, enemySerpent: enemySerpent ? JSON.parse(JSON.stringify(enemySerpent)) : null, quake: quake ? JSON.parse(JSON.stringify(quake)) : null, enemyQuake: enemyQuake ? JSON.parse(JSON.stringify(enemyQuake)) : null, finale: finale ? { ...finale } : null, enemyFinale: enemyFinale ? { ...enemyFinale } : null, skyfall: skyfall ? { ...skyfall } : null, enemySkyfall: enemySkyfall ? { ...enemySkyfall } : null, orrery: orrery ? { ...orrery } : null, enemyOrrery: enemyOrrery ? { ...enemyOrrery } : null, sunroar: sunroar ? { ...sunroar } : null, enemySunroar: enemySunroar ? { ...enemySunroar } : null, delivery: delivery ? { ...delivery } : null, enemyDelivery: enemyDelivery ? { ...enemyDelivery } : null, tortoise: tortoise ? { ...tortoise, spirit: undefined } : null, enemyTortoise: enemyTortoise ? { ...enemyTortoise, spirit: undefined } : null, playable: playable(), cutinVisible: !!squad && squad.t < SQUAD.cutinDuration, totalDamage, comboHits, comboDamage, hitstop, cinematic, trauma, projectileCount: projectiles.length, audioState: audio?.state || 'uninitialized', audioSources, stageLoaded: !!images.stage, spriteLoaded: !!images.hero, manifestLoaded: !!manifest }; },
     startMatch,setMenuOpen,menuSound,openSettings,toggleFullscreen,music(){return music?{on:musicOn,volume:musicVolume,playing:!music.paused,src:MUSIC_PATH,element:music}:null;},onRoundCue(fn){roundAnnouncer=typeof fn==='function'?fn:null;},
@@ -1741,7 +1832,7 @@
     stopAnnouncer(){systemAnnouncer?.clear();},announcerState(){return systemAnnouncer?.snapshot()||null;},
     selectCharacter, setAI(value){aiEnabled=!!value;dummy.action=null;dummy.vx=0;dummy.state='idle';}, opponentPose,
     setPaused, setHitboxes(v) { hitboxes = !!v; $('#hitbox-toggle').checked = hitboxes; },
-    receiveHit(damage = 12,options={}) { if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || hero.invuln > 0) return false; if (hero.action?.guard && shellGuard(hero)) return false; if (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate') return false; hero.hp = Math.max(0, hero.hp - damage); hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?.42:0; hero.vx = hero.facing * -170; state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
+    receiveHit(damage = 12,options={}) { if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || hero.invuln > 0) return false; if (hero.action?.guard && shellGuard(hero)) return false; if (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate' || hero.action?.type === 'super' || superUlt) return false; hero.hp = Math.max(0, hero.hp - damage); hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?.42:0; hero.vx = hero.facing * -170; state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
   };
   if(F)reset();
   if(window.FRONTEND_ENABLED)setMenuOpen(true);

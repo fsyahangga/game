@@ -69,6 +69,7 @@
         const src = card.querySelector('img')?.getAttribute('src');
         if (src && b.img.getAttribute('src') !== src) b.img.setAttribute('src', src);
         for (const cls of ['on-cooldown', 'active', 'recharged']) b.el.classList.toggle(cls, card.classList.contains(cls));
+        if (b.el.hidden !== card.hidden) b.el.hidden = card.hidden;
         const wipe = card.querySelector('.cooldown-wipe');
         if (wipe && b.wipe) b.wipe.style.background = wipe.style.background;
       }

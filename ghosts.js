@@ -112,6 +112,22 @@
       cutin: { top: 'BEGU', bottom: 'MENJULANG', detail: 'MENJULANG TIGA KALI DARI TANAH' }, voice: true
     }
   };
+  // Super ultimate (U), unlocked when the mana bar reaches 200. Each name comes from the dedemit's own legend.
+  const SUPERS = {
+    isolde: { name: 'LIANG LAHAT', top: 'LIANG', bottom: 'LAHAT', detail: 'LAWAN DITARIK KE LIANG KUBUR', lore: 'Pocong bangkit dari kuburnya karena tali kafan tak dilepas.' },
+    arco: { name: 'KUNTILANAK MERAH', top: 'KUNTILANAK', bottom: 'MERAH', detail: 'WUJUD KUNTILANAK PALING GANAS', lore: 'Kuntilanak merah disebut yang paling kuat dan paling pendendam.' },
+    edda: { name: 'LUBANG DENDAM', top: 'LUBANG', bottom: 'DENDAM', detail: 'DENDAM KELUAR DARI PUNGGUNG BOLONG', lore: 'Lubang di punggungnya menyimpan dendam yang belum terbalas.' },
+    zanni: { name: 'PULANG KE BUKIT GOMBEL', top: 'BUKIT', bottom: 'GOMBEL', detail: 'DIBAWA PULANG KE SARANGNYA DI SEMARANG', lore: 'Wewe Gombel dinamai dari Bukit Gombel di Semarang, tempat ia menyembunyikan culikannya.' },
+    haldor: { name: 'HUJAN BATU GENDERUWO', top: 'HUJAN BATU', bottom: 'GENDERUWO', detail: 'BATU GAIB MENGHUJANI DARI LANGIT', lore: 'Rumah yang dihujani batu tanpa pelempar konon ulah genderuwo.' },
+    solan: { name: 'AJI SUKMA SEJATI', top: 'AJI SUKMA', bottom: 'SEJATI', detail: 'TENAGA DALAM LELUHUR DILEPAS PENUH', lore: 'Ajian pamungkas penjaga tanah keramat.' },
+    fenr: { name: 'TITAH CALON ARANG', top: 'TITAH', bottom: 'CALON ARANG', detail: 'RATU LEYAK MEMANGGIL WABAH API', lore: 'Calon Arang, ratu para leyak dari Girah, menebar teluh ke seluruh negeri.' },
+    cora: { name: 'TERBANG MENJELANG SUBUH', top: 'MENJELANG', bottom: 'SUBUH', detail: 'PERBURUAN TERAKHIR SEBELUM FAJAR', lore: 'Kepala kuyang harus kembali ke tubuhnya sebelum fajar.' },
+    rhea: { name: 'PALASIK KUDUANG', top: 'PALASIK', bottom: 'KUDUANG', detail: 'KEPALA LEPAS MENGISAP SARI KEHIDUPAN', lore: 'Palasik kuduang adalah palasik yang kepalanya lepas dari badan.' },
+    nib: { name: 'PASUKAN TUYUL GUNDUL', top: 'PASUKAN', bottom: 'TUYUL GUNDUL', detail: 'SEMUA TUYUL PESUGIHAN DIKERAHKAN', lore: 'Pemelihara pesugihan konon tak pernah memelihara satu tuyul saja.' },
+    mira: { name: 'ILMU BATARA KARANG', top: 'ILMU', bottom: 'BATARA KARANG', detail: 'ILMU HITAM ASAL MUASAL JENGLOT', lore: 'Jenglot dipercaya berasal dari penganut ilmu Batara Karang yang tubuhnya mengecil.' },
+    naja: { name: 'JANGAN MENENGADAH', top: 'JANGAN', bottom: 'MENENGADAH', detail: 'MAKIN DITATAP, MAKIN MENJULANG', lore: 'Begu Ganjang terus meninggi selama orang menatapnya.' }
+  };
+  for (const [slot, s] of Object.entries(SUPERS)) GHOSTS[slot].super = s;
   for (const g of Object.values(GHOSTS)) g.cls = FACTIONS[g.faction].label;
 
   // Skill names live in each kit; point them at the dedemit names so the HUD, touch buttons and logs all agree.
