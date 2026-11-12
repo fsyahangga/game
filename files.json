@@ -1,10 +1,10 @@
 {
   "files": 289,
-  "bytes": 39350864,
+  "bytes": 39352161,
   "list": [
     {
       "file": "index.html",
-      "bytes": 17729
+      "bytes": 17758
     },
     {
       "file": "mobile.html",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 13494
+      "bytes": 14228
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -84,7 +84,7 @@
     },
     {
       "file": "game.js",
-      "bytes": 179425
+      "bytes": 179959
     },
     {
       "file": "menu.js",

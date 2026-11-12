@@ -107,10 +107,14 @@ html.touch .install-pill{margin-right:56px}
 #install-help .menu-primary{width:100%;background:var(--kunyit);border-color:#f3d48a;color:#1a140a}
 
 /* Mana bar (under the player's HP) and the SUPER ULTIMATE card that appears when it is full (game.js BALANCE.mana). */
-.mana-frame{display:flex;align-items:center;gap:8px;margin-top:5px}
-.mana-track{flex:1;height:9px;padding:2px;background:#0b1013;border:1px solid #7f8fb08c;transform:skewX(-15deg);overflow:hidden}
-.mana-fill{height:100%;width:0;background:linear-gradient(180deg,#d9e6ff 0,#8fb1ff 35%,#4a64d8 40%,#3a4fb8);box-shadow:inset 0 1px 0 #fff8;transition:width .16s ease-out}
-.mana-frame b{font-size:9px;letter-spacing:1.2px;font-weight:700;color:#b9c8ff;white-space:nowrap;text-shadow:1px 1px 2px #0b1a13}
+.mana-frame{display:flex;align-items:center;gap:7px;margin-top:6px}
+.mana-tag{font-size:11px;font-weight:700;letter-spacing:1.4px;color:#9fd0ff;text-shadow:0 0 6px #3f8cff,1px 1px 2px #000}
+.mana-track{flex:1;height:14px;padding:2px;background:#080c18;border:1px solid #8fc0ff;transform:skewX(-15deg);overflow:hidden;box-shadow:0 0 8px #3f8cff88,inset 0 0 0 1px #0008;position:relative}
+.mana-track:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),#0008 calc(25% - 1px),#0008 25%)}
+.mana-fill{height:100%;width:0;background:linear-gradient(180deg,#e6f4ff 0,#7cc4ff 30%,#2f7cff 55%,#2a5fe0);box-shadow:inset 0 1px 0 #fff9,0 0 10px #4aa3ff;transition:width .16s ease-out}
+.mana-frame b{min-width:58px;text-align:right;font-size:11px;letter-spacing:1px;font-weight:700;color:#cfe6ff;white-space:nowrap;text-shadow:1px 1px 2px #000}
+.mana-frame.full .mana-tag{color:#ffd76a;text-shadow:0 0 8px #ffb84a,1px 1px 2px #000}
+.mana-frame.full .mana-track{border-color:#ffd76a;box-shadow:0 0 14px #ffb84acc}
 .mana-frame.full .mana-fill{background:linear-gradient(90deg,#ffd76a,#fff4c9,#ff9f4a,#ffd76a);background-size:200% 100%;animation:mana-shine 1s linear infinite}
 .mana-frame.full b{color:#ffe08a}
 @keyframes mana-shine{to{background-position:-200% 0}}
@@ -125,5 +129,6 @@ html.touch .install-pill{margin-right:56px}
 .tbtn-super{right:calc(var(--big)/2 + var(--r)*1.15 - var(--small)/2);bottom:calc(var(--big)/2 + var(--r)*.95 - var(--small)/2);border-color:#ffd76a;box-shadow:0 0 16px #ffb84acc;animation:super-glow 1.1s ease-in-out infinite alternate}
 .tbtn-super[hidden]{display:none}
 .tbtn-super b{position:absolute;left:0;right:0;bottom:4px;z-index:3;font:700 10px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.6px;color:#ffe9a8;text-shadow:0 1px 2px #000;pointer-events:none}
-@media(max-height:500px) and (min-width:620px){.mana-frame{margin-top:3px}.mana-track{height:7px}.mana-frame b{font-size:8px}}
+@media(max-height:500px) and (min-width:620px){.mana-frame{margin-top:4px}.mana-track{height:11px}.mana-tag,.mana-frame b{font-size:9px}.mana-frame b{min-width:46px}}
+@media(max-width:620px){.mana-track{height:10px}.mana-tag,.mana-frame b{font-size:8px}.mana-frame b{min-width:40px}}
 @media (prefers-reduced-motion:reduce){.mana-frame.full .mana-fill,.skill-card.super .skill-art,.tbtn-super{animation:none}}

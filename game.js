@@ -15,7 +15,9 @@
     dummyMax:200, heroMax:200, hpPerBar:100, basicCooldownRefund:.05,
     // Mana: every hit that lands adds perHit + damage*perDamage + (combo length, up to comboCap)*perCombo. At max the
     // SUPER ULTIMATE (U) appears: a freeze-frame cut-in, then five strikes on the rival (68 damage, the last knocks down).
-    mana: {max:200, perHit:4, perDamage:.5, perCombo:1, comboCap:8},
+    // Tuned so a full bar comes after roughly 8-10 landed hits (about 80-100 damage), well before a 200 HP rival falls;
+    // taking damage also fills it (perTaken), and mana carries over between rounds of a match.
+    mana: {max:200, perHit:6, perDamage:1.5, perCombo:1.5, comboCap:8, perTaken:1.2},
     superUlt: {cutin:1.05, strikes:[.15,.4,.65,.9,1.25], damage:[10,10,10,12,26], duration:1.9}
   };
   const cooldownMax = { skill1:BALANCE.skill1.cooldown, skill2:BALANCE.skill2.cooldown, ultimate:BALANCE.ultimate.cooldown };
@@ -212,7 +214,7 @@
         if(speech)match.koDuration=Math.max(2.2,(speech[call]?.duration||0)+(speech[outcome]?.duration||0)+.5);
         systemAnnouncer?.play([call,outcome]);
       }
-      if(event.type==='next-round'){resetCombat();announceTimer=0;emitRoundCue('round',event.round);}
+      if(event.type==='next-round'){const mana=hero.mana;resetCombat();hero.mana=mana;announceTimer=0;emitRoundCue('round',event.round);}
       if(event.type==='complete')window.FrontEnd?.showResult({winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins,player:selectedCharacter,enemy:opponentCharacter,stage:stageId,level:difficulty,mode:'versus'});
     }
   }
@@ -351,7 +353,7 @@
     const M = BALANCE.mana, before = hero.mana;
     if (superUlt || before >= M.max) return;
     hero.mana = Math.min(M.max, before + M.perHit + damage * M.perDamage + Math.min(comboHits, M.comboCap) * M.perCombo);
-    if (hero.mana >= M.max) { manaReadyPulse = 1.4; announce('SUPER ULTIMATE SIAP · U', 1.4); }
+    if (hero.mana >= M.max) { manaReadyPulse = 1.4; announce('SUPER ULTIMATE SIAP', 1.4); }
   }
   function superInfo(id = selectedCharacter) {
     const g = window.GHOSTS?.[id];
@@ -1766,7 +1768,7 @@
     $('#best-combo').innerHTML = `${bestCombo} <small>HITS</small>`;
     $('#announcement').classList.toggle('visible', announceTimer > 0);
     {const M=BALANCE.mana,full=hero.mana>=M.max,el=$('#mana-fill'),sc=$('.skill-card.super');
-     if(el){el.style.width=`${(hero.mana/M.max*100).toFixed(1)}%`;$('#mana-label').textContent=full?'SUPER SIAP':`MANA ${Math.floor(hero.mana)} / ${M.max}`;$('.mana-frame').classList.toggle('full',full);}
+     if(el){el.style.width=`${(hero.mana/M.max*100).toFixed(1)}%`;$('#mana-label').textContent=full?'SUPER SIAP':`${Math.floor(hero.mana)} / ${M.max}`;$('.mana-frame').classList.toggle('full',full);}
      if(sc){const show=full||!!superUlt;if(sc.hidden===show)sc.hidden=!show;sc.classList.toggle('fresh',manaReadyPulse>0);sc.classList.toggle('active',!!superUlt);}
      canvas.dataset.mana=String(Math.floor(hero.mana));canvas.dataset.superUlt=superUlt?'active':full?'ready':'charging';}
     for (const card of document.querySelectorAll('.skill-card:not(.super)')) {
@@ -1832,7 +1834,7 @@
     stopAnnouncer(){systemAnnouncer?.clear();},announcerState(){return systemAnnouncer?.snapshot()||null;},
     selectCharacter, setAI(value){aiEnabled=!!value;dummy.action=null;dummy.vx=0;dummy.state='idle';}, opponentPose,
     setPaused, setHitboxes(v) { hitboxes = !!v; $('#hitbox-toggle').checked = hitboxes; },
-    receiveHit(damage = 12,options={}) { if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || hero.invuln > 0) return false; if (hero.action?.guard && shellGuard(hero)) return false; if (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate' || hero.action?.type === 'super' || superUlt) return false; hero.hp = Math.max(0, hero.hp - damage); hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?.42:0; hero.vx = hero.facing * -170; state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
+    receiveHit(damage = 12,options={}) { if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || hero.invuln > 0) return false; if (hero.action?.guard && shellGuard(hero)) return false; if (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate' || hero.action?.type === 'super' || superUlt) return false; const taken = Math.min(hero.hp, damage); hero.hp = Math.max(0, hero.hp - damage); if (!superUlt && hero.mana < BALANCE.mana.max) { hero.mana = Math.min(BALANCE.mana.max, hero.mana + taken * BALANCE.mana.perTaken); if (hero.mana >= BALANCE.mana.max) { manaReadyPulse = 1.4; announce('SUPER ULTIMATE SIAP', 1.4); } } hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?.42:0; hero.vx = hero.facing * -170; state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
   };
   if(F)reset();
   if(window.FRONTEND_ENABLED)setMenuOpen(true);
