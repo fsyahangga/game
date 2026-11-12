@@ -8,6 +8,8 @@
      users/{uid}/friends/{fid}    { uid, name, photo, code, since }                 written by both sides on accept
      codes/{DMT-XXXX}             { uid }                                           friend code -> account, unique
      friendRequests/{from_to}     { from, to, fromName, fromPhoto, fromCode, toName, toPhoto, toCode, createdAt }
+     users/{uid}/history/{matchId} { opponent, opponentName, myChar, oppChar, stage, won, myRounds, oppRounds, at }
+     users/{uid}.wins / .losses   online record, each side counts its own result once (history id = match id)
      matches/{id}                 a challenge: { host, guest, names, photos, hostChar, guestChar, stage, status, offer, answer }
 
    Online fight (stage 3): the challenger (host) picks a dedemit and an arena and writes matches/{id} with status
@@ -20,7 +22,7 @@
    The menu (menu.js) reads window.DedemitOnline.state and re-renders on the 'dedemit-online' window event. */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut as fbSignOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc, runTransaction, collection, query, where, onSnapshot, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc, runTransaction, collection, query, where, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyAZbXIMWG5vBz9U3zUHpBgLfmmPklrijhc',
@@ -42,7 +44,7 @@ const INVITE_TTL = 90 * 1000;               // an unanswered challenge expires
 const CONNECT_TIMEOUT = 25 * 1000;
 const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O or 1/I
-const state = { ready: false, user: null, profile: null, friends: [], incoming: [], outgoing: [], invites: [], error: '', notice: '', busy: false,
+const state = { ready: false, user: null, profile: null, friends: [], incoming: [], outgoing: [], invites: [], history: [], error: '', notice: '', busy: false,
   net: { status: 'idle', role: null, matchId: null, peer: '', message: '' } };   // status: idle | waiting | connecting | playing | failed
 let unsubs = [], presenceTimer = 0;
 const friendWatch = new Map();             // fid -> { unsub, live }
@@ -95,7 +97,7 @@ function stopListening() {
   for (const u of unsubs) u(); unsubs = [];
   for (const w of friendWatch.values()) w.unsub(); friendWatch.clear();
   clearInterval(presenceTimer); presenceTimer = 0;
-  Object.assign(state, { profile: null, friends: [], incoming: [], outgoing: [], invites: [] });
+  Object.assign(state, { profile: null, friends: [], incoming: [], outgoing: [], invites: [], history: [] });
 }
 function friendList(docs) {
   const seen = new Set();
@@ -115,7 +117,8 @@ function refreshFriends() {
   const now = Date.now();
   state.friends = (state.friendDocs || []).map(f => {
     const live = friendWatch.get(f.uid)?.live, seen = live?.lastSeen?.toMillis?.() || 0;
-    return { uid: f.uid, name: live?.name || f.name, photo: live?.photo || f.photo, code: live?.code || f.code, online: now - seen < ONLINE_WINDOW, lastSeen: seen };
+    const games = (state.history || []).filter(h => h.opponent === f.uid), won = games.filter(h => h.won).length;
+    return { uid: f.uid, name: live?.name || f.name, photo: live?.photo || f.photo, code: live?.code || f.code, online: now - seen < ONLINE_WINDOW, lastSeen: seen, won, lost: games.length - won };
   }).sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
   emit();
 }
@@ -124,6 +127,7 @@ function startListening(uid) {
   unsubs.push(onSnapshot(collection(db, 'users', uid, 'friends'), q => friendList(q.docs), e => setStatus(message(e))));
   unsubs.push(onSnapshot(query(collection(db, 'friendRequests'), where('to', '==', uid)), q => { state.incoming = q.docs.map(d => d.data()); emit(); }, e => setStatus(message(e))));
   unsubs.push(onSnapshot(query(collection(db, 'friendRequests'), where('from', '==', uid)), q => { state.outgoing = q.docs.map(d => d.data()); emit(); }, e => setStatus(message(e))));
+  unsubs.push(onSnapshot(query(collection(db, 'users', uid, 'history'), orderBy('at', 'desc'), limit(50)), q => { state.history = q.docs.map(d => ({ id: d.id, ...d.data() })); refreshFriends(); }, () => {}));
   unsubs.push(onSnapshot(query(collection(db, 'matches'), where('guest', '==', uid), where('status', '==', 'invited')), q => {
     const now = Date.now();
     state.invites = q.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => !m.createdAt || now - m.createdAt.toMillis() < INVITE_TTL);
@@ -241,7 +245,7 @@ function maybeStart() {
   r.started = true; clearTimeout(r.timer);
   const m = r.m, send = (str, reliable) => { const ch = reliable ? r.rel : r.unrel; if (ch?.readyState === 'open') try { ch.send(str); } catch (_) {} };
   setNet({ status: 'playing', message: '' });
-  const ok = window.__game?.netStart({ role: r.role, player: m.hostChar, enemy: m.guestChar, stage: m.stage, peerName: r.role === 'host' ? m.guestName : m.hostName, send });
+  const ok = window.__game?.netStart({ role: r.role, player: m.hostChar, enemy: m.guestChar, stage: m.stage, peerName: r.role === 'host' ? m.guestName : m.hostName, peerUid: r.role === 'host' ? m.guest : m.host, send });
   if (!ok) { send(JSON.stringify({ t: 'bye' }), true); netFail('Game belum siap. Tunggu arena selesai dimuat lalu coba lagi.'); }
 }
 function watchMatch(ref, role) {
@@ -280,8 +284,23 @@ function watchMatch(ref, role) {
   }, e => netFail(message(e)));
 }
 // The fight is over (result, a player left, the connection dropped): close the connection and remove the challenge.
+// Each player records its own result once: history/{matchId} can only be created once, and the same batch adds 1 to
+// wins or losses, so a repeated save fails as a whole.
+async function recordResult(r, result) {
+  const m = r?.m, uid = me(); if (!m || !uid || !result) return;
+  const host = r.role === 'host', won = host === (result.winner === 'player');
+  const b = writeBatch(db);
+  b.set(doc(db, 'users', uid, 'history', r.ref.id), {
+    opponent: host ? m.guest : m.host, opponentName: cleanName(host ? m.guestName : m.hostName),
+    myChar: host ? m.hostChar : m.guestChar, oppChar: host ? m.guestChar : m.hostChar, stage: m.stage, won,
+    myRounds: host ? result.playerWins : result.enemyWins, oppRounds: host ? result.enemyWins : result.playerWins, at: serverTimestamp()
+  });
+  b.update(doc(db, 'users', uid), { [won ? 'wins' : 'losses']: increment(1) });
+  await b.commit().catch(() => {});
+}
 window.addEventListener('dedemit-net-end', e => {
-  const reason = e.detail, r = rtc; closeRtc();
+  const { reason, result } = e.detail || {}, r = rtc; closeRtc();
+  if (reason === 'complete') recordResult(r, result);
   if (r?.ref && r.role === 'host') deleteDoc(r.ref).catch(() => {});
   setNet({ status: 'idle', role: null, matchId: null, message: reason === 'left' ? 'Lawan meninggalkan pertarungan.' : reason === 'lost' ? 'Koneksi dengan lawan terputus.' : '' });
 });
@@ -314,6 +333,7 @@ Object.assign(api, {
     if (r?.ref) { if (r.role === 'host') deleteDoc(r.ref).catch(() => {}); else updateDoc(r.ref, { status: 'cancelled', updatedAt: serverTimestamp() }).catch(() => {}); }
     setNet({ status: 'idle', role: null, matchId: null, message: '' });
   },
+  rematch(peer, char, stage) { return api.challenge({ uid: peer.uid, name: peer.name }, { char, stage }); },
   clearNet() { if (state.net.status === 'failed' || state.net.status === 'declined') setNet({ status: 'idle', message: '' }); }
 });
 

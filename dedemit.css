@@ -215,3 +215,12 @@ html.touch .ci-2p{display:none}
 body.online #settings-btn{display:none}
 body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.ol-invite{animation:none}.ol-spinner{animation-duration:3s}}
+
+/* Online record and history (Teman screen). */
+.ol-record{font-size:17px;color:#d9d3c2}
+.ol-record b{color:#ffe08a;font-size:20px}
+.ol-record i{color:#6d6553;font-style:normal;margin:0 4px}
+.ol-history{grid-column:1/-1}
+.ol-result{flex:none;width:64px;text-align:center;padding:4px 0;font-weight:700;font-size:14px;border:1px solid}
+.ol-history li.won .ol-result{color:#9fe0b8;border-color:#3d7a57}
+.ol-history li.lost .ol-result{color:#ff9d8a;border-color:#7a3d3d}

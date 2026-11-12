@@ -8,8 +8,13 @@ service cloud.firestore {
     function text(v, max) { return v is string && v.size() <= max; }
     function docPath(p) { return path('/databases/' + database + '/documents/' + p); }
     function profileOk(d) {
-      return d.keys().hasOnly(['uid', 'name', 'photo', 'code', 'createdAt', 'lastSeen'])
-        && d.uid == me() && text(d.name, 24) && d.name.size() > 0 && text(d.photo, 500) && text(d.code, 8);
+      return d.keys().hasOnly(['uid', 'name', 'photo', 'code', 'createdAt', 'lastSeen', 'wins', 'losses'])
+        && d.uid == me() && text(d.name, 24) && d.name.size() > 0 && text(d.photo, 500) && text(d.code, 8)
+        && d.get('wins', 0) is int && d.get('losses', 0) is int;
+    }
+    // The online record only goes up, by at most one per save (a finished fight).
+    function recordStep(before, after) {
+      return (after.get('wins', 0) - before.get('wins', 0)) in [0, 1] && (after.get('losses', 0) - before.get('losses', 0)) in [0, 1];
     }
     function friendOk(d) {
       return d.keys().hasOnly(['uid', 'name', 'photo', 'code', 'since'])
@@ -20,10 +25,24 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && uid == me() && profileOk(request.resource.data)
+        && request.resource.data.get('wins', 0) == 0 && request.resource.data.get('losses', 0) == 0
         && getAfter(docPath('codes/' + request.resource.data.code)).data.uid == me();
       allow update: if signedIn() && uid == me() && profileOk(request.resource.data)
-        && request.resource.data.code == resource.data.code && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.code == resource.data.code && request.resource.data.createdAt == resource.data.createdAt
+        && recordStep(resource.data, request.resource.data);
       allow delete: if false;
+
+      // Online history: the owner's own results, one per match (the id is the match id), never edited.
+      match /history/{matchId} {
+        allow read: if signedIn() && uid == me();
+        allow create: if signedIn() && uid == me()
+          && request.resource.data.keys().hasOnly(['opponent', 'opponentName', 'myChar', 'oppChar', 'stage', 'won', 'myRounds', 'oppRounds', 'at'])
+          && text(request.resource.data.opponent, 128) && text(request.resource.data.opponentName, 24)
+          && text(request.resource.data.myChar, 16) && text(request.resource.data.oppChar, 16) && text(request.resource.data.stage, 16)
+          && request.resource.data.won is bool && request.resource.data.myRounds is int && request.resource.data.oppRounds is int;
+        allow update: if false;
+        allow delete: if signedIn() && uid == me();
+      }
 
       // Friends: written on both sides when a request is accepted, and only while that request exists.
       match /friends/{fid} {

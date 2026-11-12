@@ -21,6 +21,7 @@ Kalau `firestore.rules` diubah, ulangi langkah 3.
 | `users/{uid}/friends/{fid}` | teman (nama, foto, kode) | dibaca pemiliknya; dibuat dua sisi saat permintaan diterima; dihapus salah satu |
 | `codes/{DMT-XXXX}` | pemilik kode teman | dibuat sekali oleh pemiliknya, unik |
 | `friendRequests/{dari}_{ke}` | permintaan pertemanan | hanya dua pemain itu |
+| `users/{uid}/history/{matchId}` | hasil tarung online milik pemain itu (lawan, dedemit, skor ronde, menang/kalah) | dibaca dan dibuat pemiliknya, sekali per pertandingan |
 | `matches/{id}` | tantangan: dedemit, arena, status, offer/answer WebRTC | hanya penantang dan temannya; dibuat hanya untuk teman; dihapus setelah selesai |
 
 Email tidak disimpan di Firestore. Status online: `lastSeen` diperbarui tiap 60 detik selama game terbuka; teman dianggap online kalau `lastSeen` kurang dari 150 detik lalu.
@@ -36,6 +37,13 @@ Email tidak disimpan di Firestore. Status online: `lastSeen` diperbarui tiap 60 
 Kode: `netStart`, `netExport`/`netImport`, `netMessage` di [game.js](../game.js); koneksi di bagian "online fight" [online.js](../online.js).
 
 **Batasan:** tanpa server TURN, sebagian jaringan ketat (beberapa jaringan seluler atau kantor) tidak bisa tersambung langsung. Server TURN biasanya berbayar; bisa ditambahkan ke `ICE` di online.js nanti.
+
+## Rekor, riwayat, dan tanding ulang
+
+- Setelah tarung online selesai, tiap pemain mencatat hasilnya sendiri: `users/{uid}/history/{matchId}` dan `wins`/`losses` di profil (naik satu). Rules hanya mengizinkan rekor naik paling banyak 1 per simpan dan satu riwayat per pertandingan.
+- Layar Teman menampilkan rekor (menang/kalah), 10 pertarungan terakhir, dan skor head-to-head per teman ("kamu 2–1").
+- Layar hasil tarung online punya tombol **Tantang lagi**: tantangan baru ke lawan yang sama dengan dedemit dan arena yang sama.
+- Catatan: hasil dicatat oleh browser pemain sendiri, jadi pemain yang sengaja mengutak-atik kode bisa memalsukan rekornya. Untuk main santai antar teman ini cukup.
 
 ## Kuota gratis
 

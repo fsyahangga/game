@@ -44,7 +44,7 @@
   // Online versus (online.js): the host runs the fight as P1 (hero) with the guest as P2 (dummy) on remote keys; the guest
   // shows the host's snapshots (~30 per second) and keeps simulating between them with the same inputs, so motion stays
   // smooth. The guest's own keys go to the host only (no local prediction), so a guest press shows after one round trip.
-  let netRole = null, netSend = null, netLastSent = 0, netEnded = false, netPeerName = '', netLastSeq = -1;
+  let netRole = null, netSend = null, netLastSent = 0, netEnded = false, netPeerName = '', netPeerUid = '', netLastSeq = -1;
   const netHeld = new Set(), netSeen = new Map(), netFallbackArt = {};
   const NET_KEYS = { a: 'left', d: 'right', w: 'up', s: 'down', ' ': 'attack', i: 'skill1', o: 'skill2', p: 'ultimate', u: 'super' };
   const p2keys = new Set(), p2taps = { left: -10, right: -10 };
@@ -227,7 +227,7 @@
         systemAnnouncer?.play([call,outcome]);
       }
       if(event.type==='next-round'){const mana=hero.mana,mana2=dummy.mana;resetCombat();hero.mana=mana;dummy.mana=mana2;announceTimer=0;emitRoundCue('round',event.round);}
-      if(event.type==='complete'){const online=netRole?{role:netRole,peer:netPeerName}:null;if(netRole){netEnded=true;netStop('complete',false);}window.FrontEnd?.showResult({online,local2p:localP2&&!online,winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins,player:selectedCharacter,enemy:opponentCharacter,stage:stageId,level:difficulty,mode:'versus'});}
+      if(event.type==='complete'){const online=netRole?{role:netRole,peer:netPeerName,peerUid:netPeerUid}:null;if(netRole){netEnded=true;netStop('complete',false,{winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins});}window.FrontEnd?.showResult({online,local2p:localP2&&!online,winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins,player:selectedCharacter,enemy:opponentCharacter,stage:stageId,level:difficulty,mode:'versus'});}
     }
   }
   function updateMatchHud() {
@@ -527,11 +527,11 @@
     if (down) { if (netHeld.has(k)) return; netHeld.add(k); } else { if (!netHeld.has(k)) return; netHeld.delete(k); }
     netSend?.(JSON.stringify({ t: 'k', k, d: down ? 1 : 0 }), true);
   }
-  function netStop(reason, toMenu = true) {
+  function netStop(reason, toMenu = true, result = null) {
     if (!netRole) return;
     netRole = null; netSend = null; netHeld.clear(); netSeen.clear(); localP2 = false;
     document.body.classList.remove('online', 'online-guest');
-    window.dispatchEvent(new CustomEvent('dedemit-net-end', { detail: reason }));
+    window.dispatchEvent(new CustomEvent('dedemit-net-end', { detail: { reason, result } }));
     if (toMenu) { setMenuOpen(true); window.FrontEnd?.onlineEnded?.(reason); }
   }
   function netPeerLost(reason = 'lost') {
@@ -544,9 +544,9 @@
     if (!window.confirm('Keluar dari pertarungan online?')) { canvas.focus({ preventScroll: true }); return; }
     netSend?.(JSON.stringify({ t: 'bye' }), true); netEnded = true; netStop('quit');
   }
-  function netStart({ role, player, enemy, stage, send, peerName = '' }) {
+  function netStart({ role, player, enemy, stage, send, peerName = '', peerUid = '' }) {
     if (!startMatch({ player, enemy, stage, level: 'medium', mode: 'versus', local2p: true })) return false;
-    netRole = role; netSend = send; netEnded = false; netPeerName = peerName; netLastSeq = -1; netHeld.clear(); netSeen.clear(); hudIdentity = '';
+    netRole = role; netSend = send; netEnded = false; netPeerName = peerName; netPeerUid = peerUid; netLastSeq = -1; netHeld.clear(); netSeen.clear(); hudIdentity = '';
     document.body.classList.add('online'); document.body.classList.toggle('online-guest', role === 'guest');
     const tags = document.querySelectorAll('.player-tag');
     if (tags[0]) tags[0].textContent = role === 'host' ? 'KAMU' : 'LAWAN';
