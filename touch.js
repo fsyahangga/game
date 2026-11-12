@@ -73,7 +73,7 @@
         const wipe = card.querySelector('.cooldown-wipe');
         if (wipe && b.wipe) b.wipe.style.background = wipe.style.background;
       }
-      if (b.num) { const cd = g?.hero?.cooldowns?.[b.slot] || 0; b.num.textContent = cd > 0 ? String(Math.ceil(cd)) : ''; }
+      if (b.num) { const cd = (g?.me?.() || g?.hero)?.cooldowns?.[b.slot] || 0; b.num.textContent = cd > 0 ? String(Math.ceil(cd)) : ''; }
     }
     requestAnimationFrame(sync);
   }

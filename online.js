@@ -8,6 +8,14 @@
      users/{uid}/friends/{fid}    { uid, name, photo, code, since }                 written by both sides on accept
      codes/{DMT-XXXX}             { uid }                                           friend code -> account, unique
      friendRequests/{from_to}     { from, to, fromName, fromPhoto, fromCode, toName, toPhoto, toCode, createdAt }
+     matches/{id}                 a challenge: { host, guest, names, photos, hostChar, guestChar, stage, status, offer, answer }
+
+   Online fight (stage 3): the challenger (host) picks a dedemit and an arena and writes matches/{id} with status
+   'invited'. The friend sees it (state.invites), picks a dedemit and sets 'accepted'. The host then opens a WebRTC
+   connection: its offer and the guest's answer (complete SDP, no trickle) go through the same document. Two data
+   channels: 'rel' (reliable: the guest's keys, 'bye') and 'state' (unordered, no resend: the host's snapshots). When both
+   are open each side calls window.__game.netStart(); game.js does the rest. Without a TURN server some strict networks
+   cannot connect; that shows as "Koneksi gagal".
 
    The menu (menu.js) reads window.DedemitOnline.state and re-renders on the 'dedemit-online' window event. */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -30,8 +38,12 @@ const db = getFirestore(app);
 
 const ONLINE_WINDOW = 150 * 1000;          // a friend whose lastSeen is newer than this counts as online
 const PRESENCE_EVERY = 60 * 1000;
+const INVITE_TTL = 90 * 1000;               // an unanswered challenge expires
+const CONNECT_TIMEOUT = 25 * 1000;
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O or 1/I
-const state = { ready: false, user: null, profile: null, friends: [], incoming: [], outgoing: [], error: '', notice: '', busy: false };
+const state = { ready: false, user: null, profile: null, friends: [], incoming: [], outgoing: [], invites: [], error: '', notice: '', busy: false,
+  net: { status: 'idle', role: null, matchId: null, peer: '', message: '' } };   // status: idle | waiting | connecting | playing | failed
 let unsubs = [], presenceTimer = 0;
 const friendWatch = new Map();             // fid -> { unsub, live }
 
@@ -83,7 +95,7 @@ function stopListening() {
   for (const u of unsubs) u(); unsubs = [];
   for (const w of friendWatch.values()) w.unsub(); friendWatch.clear();
   clearInterval(presenceTimer); presenceTimer = 0;
-  Object.assign(state, { profile: null, friends: [], incoming: [], outgoing: [] });
+  Object.assign(state, { profile: null, friends: [], incoming: [], outgoing: [], invites: [] });
 }
 function friendList(docs) {
   const seen = new Set();
@@ -112,6 +124,11 @@ function startListening(uid) {
   unsubs.push(onSnapshot(collection(db, 'users', uid, 'friends'), q => friendList(q.docs), e => setStatus(message(e))));
   unsubs.push(onSnapshot(query(collection(db, 'friendRequests'), where('to', '==', uid)), q => { state.incoming = q.docs.map(d => d.data()); emit(); }, e => setStatus(message(e))));
   unsubs.push(onSnapshot(query(collection(db, 'friendRequests'), where('from', '==', uid)), q => { state.outgoing = q.docs.map(d => d.data()); emit(); }, e => setStatus(message(e))));
+  unsubs.push(onSnapshot(query(collection(db, 'matches'), where('guest', '==', uid), where('status', '==', 'invited')), q => {
+    const now = Date.now();
+    state.invites = q.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => !m.createdAt || now - m.createdAt.toMillis() < INVITE_TTL);
+    emit();
+  }, e => setStatus(message(e))));
   const beat = () => { if (document.visibilityState === 'visible' && auth.currentUser) updateDoc(doc(db, 'users', uid), { lastSeen: serverTimestamp() }).catch(() => {}); refreshFriends(); };
   presenceTimer = setInterval(beat, PRESENCE_EVERY);
   document.addEventListener('visibilitychange', beat);
@@ -180,6 +197,125 @@ async function acceptRequest(from) {
   b.delete(doc(db, 'friendRequests', from + '_' + me()));
   await b.commit();
 }
+
+// ---------------------------------------------------------------- online fight (WebRTC)
+let rtc = null;   // { ref, role, unsub, timer, pc, rel, unrel, offered, answered, started, m }
+function setNet(patch) { Object.assign(state.net, patch); emit(); }
+function closeRtc() {
+  if (!rtc) return;
+  rtc.unsub?.(); clearTimeout(rtc.timer);
+  for (const ch of [rtc.rel, rtc.unrel]) try { ch?.close(); } catch (_) {}
+  try { rtc.pc?.close(); } catch (_) {}
+  rtc = null;
+}
+function netFail(text, status = 'failed') {
+  const r = rtc; closeRtc();
+  if (r?.ref && r.role === 'host') deleteDoc(r.ref).catch(() => {});
+  setNet({ status, role: null, matchId: null, message: text });
+}
+function waitIce(pc) {
+  return new Promise(res => {
+    if (pc.iceGatheringState === 'complete') return res();
+    const t = setTimeout(res, 4000);
+    pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
+  });
+}
+function armTimeout() {
+  clearTimeout(rtc.timer);
+  rtc.timer = setTimeout(() => { if (rtc && !rtc.started) netFail('Koneksi gagal. Jaringan salah satu pemain mungkin memblokir koneksi langsung. Coba jaringan lain (misalnya Wi-Fi rumah).'); }, CONNECT_TIMEOUT);
+}
+function hookChannel(ch) {
+  ch.onopen = maybeStart;
+  ch.onmessage = e => window.__game?.netMessage(e.data);
+  ch.onclose = () => { if (state.net.status === 'playing') window.__game?.netPeerLost('lost'); };
+}
+function hookPc(pc) {
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState !== 'failed') return;
+    if (state.net.status === 'playing') window.__game?.netPeerLost('lost'); else netFail('Koneksi gagal. Coba lagi, atau pakai jaringan lain.');
+  };
+}
+function maybeStart() {
+  const r = rtc;
+  if (!r || r.started || r.rel?.readyState !== 'open' || r.unrel?.readyState !== 'open' || !r.m) return;
+  r.started = true; clearTimeout(r.timer);
+  const m = r.m, send = (str, reliable) => { const ch = reliable ? r.rel : r.unrel; if (ch?.readyState === 'open') try { ch.send(str); } catch (_) {} };
+  setNet({ status: 'playing', message: '' });
+  const ok = window.__game?.netStart({ role: r.role, player: m.hostChar, enemy: m.guestChar, stage: m.stage, peerName: r.role === 'host' ? m.guestName : m.hostName, send });
+  if (!ok) { send(JSON.stringify({ t: 'bye' }), true); netFail('Game belum siap. Tunggu arena selesai dimuat lalu coba lagi.'); }
+}
+function watchMatch(ref, role) {
+  rtc.unsub = onSnapshot(ref, async snap => {
+    const r = rtc; if (!r || r.ref.id !== ref.id) return;
+    const m = snap.data();
+    if (!m) { if (!r.started) netFail(role === 'host' ? 'Tantangan dibatalkan.' : 'Tantangan sudah tidak berlaku.'); return; }
+    r.m = m;
+    try {
+      if (role === 'host') {
+        if (m.status === 'declined') { netFail(`${m.guestName} menolak tantangan.`, 'declined'); return; }
+        if (m.status === 'accepted' && !r.offered) {
+          r.offered = true; setNet({ status: 'connecting', message: '' }); armTimeout();
+          const pc = r.pc = new RTCPeerConnection(ICE); hookPc(pc);
+          r.rel = pc.createDataChannel('rel', { ordered: true }); r.unrel = pc.createDataChannel('state', { ordered: false, maxRetransmits: 0 });
+          hookChannel(r.rel); hookChannel(r.unrel);
+          await pc.setLocalDescription(await pc.createOffer()); await waitIce(pc);
+          if (rtc !== r) return;
+          await updateDoc(ref, { offer: pc.localDescription.sdp, status: 'connecting', updatedAt: serverTimestamp() });
+        }
+        if (m.answer && r.pc && !r.answered) { r.answered = true; await r.pc.setRemoteDescription({ type: 'answer', sdp: m.answer }); }
+      } else {
+        if (m.status === 'cancelled') { netFail(`${m.hostName} membatalkan tantangan.`, 'declined'); return; }
+        if (m.offer && !r.answered) {
+          r.answered = true;
+          const pc = r.pc = new RTCPeerConnection(ICE); hookPc(pc);
+          pc.ondatachannel = e => { if (e.channel.label === 'rel') r.rel = e.channel; else r.unrel = e.channel; hookChannel(e.channel); maybeStart(); };
+          await pc.setRemoteDescription({ type: 'offer', sdp: m.offer });
+          await pc.setLocalDescription(await pc.createAnswer()); await waitIce(pc);
+          if (rtc !== r) return;
+          await updateDoc(ref, { answer: pc.localDescription.sdp, updatedAt: serverTimestamp() });
+        }
+      }
+      maybeStart();
+    } catch (e) { netFail(message(e)); }
+  }, e => netFail(message(e)));
+}
+// The fight is over (result, a player left, the connection dropped): close the connection and remove the challenge.
+window.addEventListener('dedemit-net-end', e => {
+  const reason = e.detail, r = rtc; closeRtc();
+  if (r?.ref && r.role === 'host') deleteDoc(r.ref).catch(() => {});
+  setNet({ status: 'idle', role: null, matchId: null, message: reason === 'left' ? 'Lawan meninggalkan pertarungan.' : reason === 'lost' ? 'Koneksi dengan lawan terputus.' : '' });
+});
+Object.assign(api, {
+  async challenge(friend, { char, stage }) {
+    if (!me() || !state.profile) return;
+    closeRtc();
+    try {
+      const ref = doc(collection(db, 'matches')), p = state.profile;
+      rtc = { ref, role: 'host' };
+      setNet({ status: 'waiting', role: 'host', matchId: ref.id, peer: friend.name, message: '' });
+      await setDoc(ref, { host: me(), guest: friend.uid, hostName: p.name, guestName: cleanName(friend.name), hostPhoto: p.photo || '', guestPhoto: '', hostChar: char, guestChar: '', stage, status: 'invited', createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      watchMatch(ref, 'host');
+      rtc.timer = setTimeout(() => { if (state.net.status === 'waiting') netFail(`${friend.name} belum menjawab tantangan.`, 'declined'); }, INVITE_TTL);
+    } catch (e) { netFail(message(e)); }
+  },
+  async acceptChallenge(id, char) {
+    const inv = state.invites.find(m => m.id === id), p = state.profile;
+    if (!inv || !p) { setNet({ status: 'failed', message: 'Tantangan sudah tidak berlaku.' }); return; }
+    closeRtc();
+    const ref = doc(db, 'matches', id);
+    rtc = { ref, role: 'guest' };
+    setNet({ status: 'connecting', role: 'guest', matchId: id, peer: inv.hostName, message: '' });
+    try { await updateDoc(ref, { status: 'accepted', guestChar: char, guestName: p.name, guestPhoto: p.photo || '', updatedAt: serverTimestamp() }); armTimeout(); watchMatch(ref, 'guest'); }
+    catch (e) { netFail(message(e)); }
+  },
+  async declineChallenge(id) { try { await updateDoc(doc(db, 'matches', id), { status: 'declined', updatedAt: serverTimestamp() }); } catch (e) { setStatus(message(e)); } },
+  async cancelChallenge() {
+    const r = rtc; closeRtc();
+    if (r?.ref) { if (r.role === 'host') deleteDoc(r.ref).catch(() => {}); else updateDoc(r.ref, { status: 'cancelled', updatedAt: serverTimestamp() }).catch(() => {}); }
+    setNet({ status: 'idle', role: null, matchId: null, message: '' });
+  },
+  clearNet() { if (state.net.status === 'failed' || state.net.status === 'declined') setNet({ status: 'idle', message: '' }); }
+});
 
 window.DedemitOnline = api;
 emit();

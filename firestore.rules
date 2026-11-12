@@ -45,6 +45,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Online fights: a challenge between two friends, with the WebRTC offer/answer for their direct connection.
+    function matchOk(d) {
+      return d.keys().hasOnly(['host', 'guest', 'hostName', 'guestName', 'hostPhoto', 'guestPhoto', 'hostChar', 'guestChar', 'stage', 'status', 'offer', 'answer', 'createdAt', 'updatedAt'])
+        && text(d.hostName, 24) && text(d.guestName, 24) && text(d.hostPhoto, 500) && text(d.guestPhoto, 500)
+        && text(d.hostChar, 16) && text(d.guestChar, 16) && text(d.stage, 16)
+        && d.status in ['invited', 'accepted', 'connecting', 'declined', 'cancelled']
+        && (!('offer' in d) || text(d.offer, 30000)) && (!('answer' in d) || text(d.answer, 30000));
+    }
+    match /matches/{id} {
+      allow read: if signedIn() && (resource.data.host == me() || resource.data.guest == me());
+      allow create: if signedIn() && matchOk(request.resource.data) && request.resource.data.host == me()
+        && request.resource.data.status == 'invited' && exists(docPath('users/' + me() + '/friends/' + request.resource.data.guest));
+      allow update: if signedIn() && (resource.data.host == me() || resource.data.guest == me()) && matchOk(request.resource.data)
+        && request.resource.data.host == resource.data.host && request.resource.data.guest == resource.data.guest;
+      allow delete: if signedIn() && (resource.data.host == me() || resource.data.guest == me());
+    }
+
     // Friend requests: id is "<from>_<to>"; only the two players involved can see or remove one.
     match /friendRequests/{id} {
       allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());

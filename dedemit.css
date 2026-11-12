@@ -195,3 +195,23 @@ html.touch .ci-2p{display:none}
 .ol-remove{padding:8px 10px}
 .ol-empty{color:#a9a392}
 @media(max-width:620px){.ol-me{grid-template-columns:1fr}.ol-signout{grid-column:1}.ol-actions .ol-btn{padding:7px 9px;font-size:14px}}
+
+/* Online fight: invitation banner, waiting screen, and the in-fight HUD (no pause; the guest sees no combo counter). */
+.ol-invite-slot{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:30;width:min(560px,94vw);pointer-events:none}
+.ol-invite{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:12px 14px;background:#0d1714f2;border:1px solid #f3d48a;box-shadow:0 0 0 3px #d9a23a33,0 14px 40px #000c;color:#efe6d2;font:500 16px Rajdhani,Arial,sans-serif;animation:ol-in .35s cubic-bezier(.2,.9,.25,1.2) both}
+.ol-invite span{flex:1;min-width:0}
+.ol-invite b{color:#ffe08a}
+.ol-invite small{display:block;color:#a9a392;font-size:13px}
+.ol-invite .ol-avatar{width:40px;height:40px}
+@keyframes ol-in{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.ol-wait{grid-column:1/-1;max-width:520px;justify-self:center;text-align:center;display:grid;justify-items:center;gap:10px}
+.ol-wait p{margin:0;font-size:20px}
+.ol-wait b{color:#ffe08a}
+.ol-spinner{width:44px;height:44px;border-radius:50%;border:4px solid #d9a23a33;border-top-color:#f3d48a;animation:ol-spin 1s linear infinite}
+.ol-spinner.done{animation:none;border-color:#d9a23a66}
+@keyframes ol-spin{to{transform:rotate(360deg)}}
+.ol-list li{min-width:0}
+.ol-list{grid-template-columns:minmax(0,1fr)}
+body.online #settings-btn{display:none}
+body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.ol-invite{animation:none}.ol-spinner{animation-duration:3s}}

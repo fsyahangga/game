@@ -41,6 +41,12 @@
   // Local two-player versus (menu 'Dua pemain'): the second fighter (the engine's 'dummy') follows P2's keys instead
   // of the CPU brain, through the same move code the CPU uses (cpuStart). See p2Press / p2Control.
   let localP2 = false, p2run = 0;
+  // Online versus (online.js): the host runs the fight as P1 (hero) with the guest as P2 (dummy) on remote keys; the guest
+  // shows the host's snapshots (~30 per second) and keeps simulating between them with the same inputs, so motion stays
+  // smooth. The guest's own keys go to the host only (no local prediction), so a guest press shows after one round trip.
+  let netRole = null, netSend = null, netLastSent = 0, netEnded = false, netPeerName = '', netLastSeq = -1;
+  const netHeld = new Set(), netSeen = new Map(), netFallbackArt = {};
+  const NET_KEYS = { a: 'left', d: 'right', w: 'up', s: 'down', ' ': 'attack', i: 'skill1', o: 'skill2', p: 'ultimate', u: 'super' };
   const p2keys = new Set(), p2taps = { left: -10, right: -10 };
   let squad = null, enemySquad = null, parade = null, enemyParade = null, flock = null, enemyFlock = null, serpent = null, enemySerpent = null, quake = null, enemyQuake = null, finale = null, enemyFinale = null, skyfall = null, enemySkyfall = null, orrery = null, enemyOrrery = null, sunroar = null, enemySunroar = null, delivery = null, enemyDelivery = null, tortoise = null, enemyTortoise = null;
   const rechargePulse = {skill1:0,skill2:0,ultimate:0};
@@ -207,6 +213,8 @@
   function advanceMatch(dt) {
     if(!Rules||!match||match.mode!=='versus')return;
     for(const event of Rules.tick(match,dt,hero.hp,currentDummyHP())) {
+      if(netDup(event.type+':'+(event.cue||'')+':'+(event.round||match.round)))continue;
+      if(event.type==='complete'&&netRole&&netEnded)continue;
       if(event.type==='cue')emitRoundCue(event.cue,event.round);
       if(event.type==='round-end') {
         clearInput();stopUltimateVoice();superUlt=squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;hero.action=dummy.action=null;projectiles.length=effects.length=0;hitstop=cinematic=trauma=0;
@@ -219,7 +227,7 @@
         systemAnnouncer?.play([call,outcome]);
       }
       if(event.type==='next-round'){const mana=hero.mana,mana2=dummy.mana;resetCombat();hero.mana=mana;dummy.mana=mana2;announceTimer=0;emitRoundCue('round',event.round);}
-      if(event.type==='complete')window.FrontEnd?.showResult({local2p:localP2,winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins,player:selectedCharacter,enemy:opponentCharacter,stage:stageId,level:difficulty,mode:'versus'});
+      if(event.type==='complete'){const online=netRole?{role:netRole,peer:netPeerName}:null;if(netRole){netEnded=true;netStop('complete',false);}window.FrontEnd?.showResult({online,local2p:localP2&&!online,winner:match.winner,playerWins:match.playerWins,enemyWins:match.enemyWins,player:selectedCharacter,enemy:opponentCharacter,stage:stageId,level:difficulty,mode:'versus'});}
     }
   }
   function updateMatchHud() {
@@ -299,6 +307,7 @@
   }
   function press(key, fromTest = false) {
     key = key.toLowerCase(); if (!fromTest) unlockAudio();
+    if (netRole && !menuOpen) { if (key === 'escape') { netAskLeave(); return; } if (key === 'r') return; if (netRole === 'guest') { netGuestKey(key, true); return; } }
     if(menuOpen) {if(key==='escape'&&settingsOpen)closeSettings();return;}
     if (key === 'escape') { if (settingsOpen) closeSettings(); else setPaused(!paused); return; }
     if (key === 'r') { reset(); return; }
@@ -312,7 +321,7 @@
     if (key === ' ') startAttack();
     if (key === 'i') cast('skill1'); if (key === 'o') cast('skill2'); if (key === 'p') cast('ultimate'); if (key === 'u') startSuper();
   }
-  function release(key) { key = key.toLowerCase(); keys.delete(key); if ((key === 'a' && hero.runDirection === -1) || (key === 'd' && hero.runDirection === 1)) hero.runDirection = 0; }
+  function release(key) { key = key.toLowerCase(); if (netRole === 'guest') { netGuestKey(key, false); return; } keys.delete(key); if ((key === 'a' && hero.runDirection === -1) || (key === 'd' && hero.runDirection === 1)) hero.runDirection = 0; }
   function clearInput() { keys.clear(); hero.runDirection = 0; taps.a = taps.d = taps.s = -10; p2keys.clear(); p2run = 0; }
   function resetCombat() {
     systemAnnouncer?.clear();
@@ -391,7 +400,7 @@
     else { hero.runDirection = 0; hero.rollBuffer = null; hero.doublePose = 0; hero.action = { type: 'super', name: 'ultimate', t: 0, duration: U.duration, fired: true, hit: false }; state('ultimate'); }
     let art = assets?.cutin, custom = true;
     if (!imgReady(art)) { art = new Image(); art.src = CUTIN_ART[id] || CUTIN_ART.arco; custom = false; }
-    superUlt = { t: 0, strike: 0, hits: 0, landed: 0, info, art, custom, assets, facing: actor.facing, owner: enemy ? 'enemy' : 'player' };
+    superUlt = { id, t: 0, strike: 0, hits: 0, landed: 0, info, art, custom, assets, facing: actor.facing, owner: enemy ? 'enemy' : 'player' };
     stopUltimateVoice(); sound('ultimate'); trauma = Math.min(1, trauma + .3);
     return true;
   }
@@ -404,7 +413,7 @@
     while (s.hits < U.strikes.length && s.strike >= U.strikes[s.hits]) {
       const i = s.hits++, last = i === U.strikes.length - 1, target = s.owner === 'enemy' ? hero : dummy, y = target.y - 90, fx = s.assets?.fx;
       const life = fx ? (last ? .9 : .6) : (last ? .85 : .5);
-      effects.push({ type: 'superPillar', x: target.x, y: CONFIG.groundY, life, maxLife: life, color: s.info.color, last, fx, facing: s.facing });
+      effects.push({ type: 'superPillar', x: target.x, y: CONFIG.groundY, life, maxLife: life, color: s.info.color, last, fx, fxId: s.id, facing: s.facing });
       const landed = s.owner === 'enemy' ? window.__game.receiveHit(U.damage[i], { force: true, freeze: false, shake: last ? 2.4 : 1.1, knock: last })
         : hitDummy(U.damage[i], last ? 320 : 30, s.info.color, hero.x, y, last, false, last ? 2.4 : 1.1, true);
       if (landed) s.landed++;
@@ -473,6 +482,81 @@
     ctx.fillText(s.info.detail, tx, fs * 1.25);
     ctx.restore();
   }
+  // ---- Online sync: the whole fight state as JSON (pictures are dropped and looked up again on the other side).
+  function netExport() {
+    const groups = { squad, enemySquad, parade, enemyParade, flock, enemyFlock, serpent, enemySerpent, quake, enemyQuake, finale, enemyFinale, skyfall, enemySkyfall, orrery, enemyOrrery, sunroar, enemySunroar, delivery, enemyDelivery, tortoise, enemyTortoise };
+    return JSON.stringify({ t: 's', v: { time, realTime, hitstop, trauma, cinematic, announceTimer, seed, stepCount, totalDamage, comboHits, bestCombo, comboDamage, comboTimer, manaReadyPulse, p2run },
+      hero, dummy, match, fenrCutin, superUlt, rechargePulse, groups, projectiles, effects, damageNumbers, keys: [...keys], p2keys: [...p2keys], ann: $('#announcement').textContent,
+      spirits: { t: tortoise ? effects.indexOf(tortoise.spirit) : -1, e: enemyTortoise ? effects.indexOf(enemyTortoise.spirit) : -1 } },
+      (k, v) => (v instanceof HTMLImageElement || (k === 'assets' && v && typeof v === 'object')) ? undefined : v);
+  }
+  function netReplace(target, src) { for (const k of Object.keys(target)) if (!(k in src)) delete target[k]; Object.assign(target, src); }
+  function netImport(st) {
+    if (st.v.stepCount <= netLastSeq) return;          // snapshots travel unordered; keep the newest
+    netLastSeq = st.v.stepCount;
+    ({ time, realTime, hitstop, trauma, cinematic, announceTimer, seed, stepCount, totalDamage, comboHits, bestCombo, comboDamage, comboTimer, manaReadyPulse, p2run } = st.v);
+    const form = hero.form; netReplace(hero, st.hero); netReplace(dummy, st.dummy); if (hero.form !== form) syncPlayerForm();
+    match = st.match; fenrCutin = st.fenrCutin; Object.assign(rechargePulse, st.rechargePulse);
+    superUlt = st.superUlt;
+    if (superUlt) {
+      superUlt.assets = superAssets(superUlt.id);
+      let art = superUlt.assets?.cutin;
+      if (!(superUlt.custom && imgReady(art))) { art = netFallbackArt[superUlt.id] || (netFallbackArt[superUlt.id] = Object.assign(new Image(), { src: CUTIN_ART[superUlt.id] || CUTIN_ART.arco })); superUlt.custom = false; }
+      superUlt.art = art;
+    }
+    ({ squad, enemySquad, parade, enemyParade, flock, enemyFlock, serpent, enemySerpent, quake, enemyQuake, finale, enemyFinale, skyfall, enemySkyfall, orrery, enemyOrrery, sunroar, enemySunroar, delivery, enemyDelivery, tortoise, enemyTortoise } = st.groups);
+    projectiles.length = 0; projectiles.push(...st.projectiles);
+    effects.length = 0; for (const e of st.effects) { if (e.fxId) e.fx = superAssets(e.fxId)?.fx; effects.push(e); }
+    damageNumbers.length = 0; damageNumbers.push(...st.damageNumbers);
+    if (tortoise && st.spirits.t >= 0) tortoise.spirit = effects[st.spirits.t];
+    if (enemyTortoise && st.spirits.e >= 0) enemyTortoise.spirit = effects[st.spirits.e];
+    keys.clear(); for (const k of st.keys) keys.add(k);
+    p2keys.clear(); for (const k of st.p2keys) p2keys.add(k);
+    $('#announcement').textContent = st.ann;
+  }
+  // The guest also simulates between snapshots, so a cue or round event can come up twice; play each once.
+  function netDup(key) { if (netRole !== 'guest') return false; const now = performance.now(), at = netSeen.get(key); netSeen.set(key, now); return at != null && now - at < 4000; }
+  function netMessage(raw) {
+    let m; try { m = JSON.parse(raw); } catch (_) { return; }
+    if (m.t === 's' && netRole === 'guest') netImport(m);
+    else if (m.t === 'k' && netRole === 'host') { if (m.d) p2Press(m.k); else p2keys.delete(m.k); }
+    else if (m.t === 'bye') netPeerLost('left');
+  }
+  function netGuestKey(key, down) {
+    const k = NET_KEYS[key]; if (!k) return;
+    if (down) { if (netHeld.has(k)) return; netHeld.add(k); } else { if (!netHeld.has(k)) return; netHeld.delete(k); }
+    netSend?.(JSON.stringify({ t: 'k', k, d: down ? 1 : 0 }), true);
+  }
+  function netStop(reason, toMenu = true) {
+    if (!netRole) return;
+    netRole = null; netSend = null; netHeld.clear(); netSeen.clear(); localP2 = false;
+    document.body.classList.remove('online', 'online-guest');
+    window.dispatchEvent(new CustomEvent('dedemit-net-end', { detail: reason }));
+    if (toMenu) { setMenuOpen(true); window.FrontEnd?.onlineEnded?.(reason); }
+  }
+  function netPeerLost(reason = 'lost') {
+    if (!netRole || netEnded) return;
+    announce(reason === 'left' ? 'LAWAN KELUAR' : 'KONEKSI TERPUTUS', 2.4);
+    netEnded = true; setTimeout(() => netStop(reason), 2200);
+  }
+  function netAskLeave() {
+    if (!netRole || netEnded) return;
+    if (!window.confirm('Keluar dari pertarungan online?')) { canvas.focus({ preventScroll: true }); return; }
+    netSend?.(JSON.stringify({ t: 'bye' }), true); netEnded = true; netStop('quit');
+  }
+  function netStart({ role, player, enemy, stage, send, peerName = '' }) {
+    if (!startMatch({ player, enemy, stage, level: 'medium', mode: 'versus', local2p: true })) return false;
+    netRole = role; netSend = send; netEnded = false; netPeerName = peerName; netLastSeq = -1; netHeld.clear(); netSeen.clear(); hudIdentity = '';
+    document.body.classList.add('online'); document.body.classList.toggle('online-guest', role === 'guest');
+    const tags = document.querySelectorAll('.player-tag');
+    if (tags[0]) tags[0].textContent = role === 'host' ? 'KAMU' : 'LAWAN';
+    if (tags[1]) tags[1].textContent = role === 'guest' ? 'KAMU' : 'LAWAN';
+    canvas.focus({ preventScroll: true });
+    return true;
+  }
+  // The fighter this screen controls: P1 everywhere except on an online guest.
+  function meActor() { return netRole === 'guest' ? dummy : hero; }
+  function oppCooldownMax() { return opponentCharacter === 'fenr' ? F.balance.cooldowns : KITS[opponentCharacter]?.balance?.cooldowns || { skill1: 3, skill2: 6, ultimate: 18 }; }
   function attackRange(index) {
     if(selectedCharacter==='fenr')return F.move(hero,'attack',index).reach;
     if(KITS[selectedCharacter])return KITS[selectedCharacter].move('attack',index).reach;
@@ -1807,7 +1891,7 @@
   }
   function updateFighterIdentity() {
     if(!F)return;
-    const identity=selectedCharacter+':'+hero.form+':'+opponentCharacter+':'+dummy.form;
+    const identity=selectedCharacter+':'+hero.form+':'+opponentCharacter+':'+dummy.form+':'+(netRole||'');
     if(identity!==hudIdentity) {
       hudIdentity=identity;const me=fighterInfo(selectedCharacter,hero.form),rival=fighterInfo(opponentCharacter,dummy.form);
       $('#player-name').textContent=me.name;$('#player-class').textContent=me.cls;$('#deck-character').textContent=me.deck;
@@ -1816,8 +1900,9 @@
       $('#enemy-portrait').src=rival.portrait;$('#enemy-portrait').alt='Portrait '+rival.name;$('#enemy-class').textContent=rival.cls;
       $('#enemy-name').textContent=rival.name;$('#enemy-title').textContent=rival.title;
       $('.fighter-two').setAttribute('aria-label','Status lawan '+rival.name);
-      {const sc=$('.skill-card.super'),si=superInfo();if(sc){sc.querySelector('.skill-name').textContent=si.name;sc.querySelector('img').src=me.icons[3];sc.setAttribute('aria-label','Super ultimate '+si.name+', tombol U');}}
-      document.querySelectorAll('.skill-card:not(.super)').forEach((card,i)=>{card.querySelector('.skill-name').textContent=me.names[i];card.querySelector('img').src=me.icons[i];card.setAttribute('aria-label',me.names[i]+', '+['Spasi','I','O','P'][i]);});
+      const deck=netRole==='guest'?fighterInfo(opponentCharacter,dummy.form):me;$('#deck-character').textContent=deck.deck;
+      {const sc=$('.skill-card.super'),si=superInfo(netRole==='guest'?opponentCharacter:selectedCharacter);if(sc){sc.querySelector('.skill-name').textContent=si.name;sc.querySelector('img').src=deck.icons[3];sc.setAttribute('aria-label','Super ultimate '+si.name+', tombol U');}}
+      document.querySelectorAll('.skill-card:not(.super)').forEach((card,i)=>{card.querySelector('.skill-name').textContent=deck.names[i];card.querySelector('img').src=deck.icons[i];card.setAttribute('aria-label',deck.names[i]+', '+['Spasi','I','O','P'][i]);});
     }
     {const g=window.GHOSTS?.[selectedCharacter];$('#player-status').textContent=g?(selectedCharacter==='fenr'&&hero.form==='wolf'?g.beast.status:g.status):selectedCharacter==='fenr'?(hero.form==='wolf'?'FERAL ACTIVE':'RANGER READY'):selectedCharacter==='mira'?'PILOT READY':selectedCharacter==='cora'?'WINGS READY':selectedCharacter==='naja'?'SANDS READY':selectedCharacter==='haldor'?'FURNACE HOT':selectedCharacter==='zanni'?'SHOWTIME':selectedCharacter==='isolde'?'LANCE READY':selectedCharacter==='rhea'?'ORBITS SET':selectedCharacter==='solan'?'PRIDE READY':selectedCharacter==='nib'?'ON THE ROUTE':selectedCharacter==='edda'?'STEADY AS STONE':'CORE ACTIVE';}
     for(const [actor,id] of [[hero,'player-form-timer'],[dummy,'enemy-form-timer']]){const el=$('#'+id),active=actor.form==='wolf';el.hidden=!active;el.textContent=active?(window.GHOSTS?.fenr?.beast?.timer||'FERAL')+'  '+Math.max(0,actor.formTime).toFixed(1)+' s':'';el.style.setProperty?.('--remaining',String(actor.formTime/F.balance.duration));}
@@ -1858,13 +1943,15 @@
     $('#combo').classList.toggle('visible', comboHits > 0 && !(superUlt && superUlt.t < BALANCE.superUlt.cutin)); $('#combo-count').textContent = comboHits; $('#combo-damage').textContent = `${comboDamage} DAMAGE`; $('#total-damage').innerHTML = `${totalDamage} <small>DMG</small>`;
     $('#best-combo').innerHTML = `${bestCombo} <small>HITS</small>`;
     $('#announcement').classList.toggle('visible', announceTimer > 0);
-    {const M=BALANCE.mana,full=hero.mana>=M.max,el=$('#mana-fill'),sc=$('.skill-card.super');
+    {const M=BALANCE.mana,full=hero.mana>=M.max,mine=meActor(),mineFull=(mine.mana||0)>=M.max,el=$('#mana-fill'),sc=$('.skill-card.super');
      if(el){el.style.width=`${(hero.mana/M.max*100).toFixed(1)}%`;$('#mana-label').textContent=full?'SUPER SIAP':`${Math.floor(hero.mana)} / ${M.max}`;$('.mana-frame').classList.toggle('full',full);}
-     if(sc){const show=full||!!superUlt;if(sc.hidden===show)sc.hidden=!show;sc.classList.toggle('fresh',manaReadyPulse>0);sc.classList.toggle('active',!!superUlt);}
+     if(sc){const show=mineFull||!!(superUlt&&(superUlt.owner==='enemy')===(mine===dummy));if(sc.hidden===show)sc.hidden=!show;sc.classList.toggle('fresh',manaReadyPulse>0);sc.classList.toggle('active',!!(superUlt&&(superUlt.owner==='enemy')===(mine===dummy)));}
      {const el2=$('#mana-fill-2');if(el2){const v=dummy.mana||0,full2=v>=M.max;el2.style.width=`${(v/M.max*100).toFixed(1)}%`;$('#mana-label-2').textContent=full2?'SUPER SIAP · N':`${Math.floor(v)} / ${M.max}`;$('.mana-frame-2').classList.toggle('full',full2);}}
      canvas.dataset.mana=String(Math.floor(hero.mana));canvas.dataset.superUlt=superUlt?'active':full?'ready':'charging';}
+    const deckActor = meActor(), deckMax = deckActor === hero ? cooldownMax : oppCooldownMax();
     for (const card of document.querySelectorAll('.skill-card:not(.super)')) {
-      const name = card.dataset.action, cd = hero.cooldowns[name] || 0;
+      const name = card.dataset.action, cd = deckActor.cooldowns?.[name] || 0;
+      if (deckActor === dummy) { card.classList.toggle('active', name === 'attack' ? dummy.action?.type === 'attack' : name === 'ultimate' ? (p2Summoned() || dummy.form === 'wolf') : dummy.action?.type === name); card.classList.toggle('on-cooldown', cd > 0); card.setAttribute('aria-disabled', String(cd > 0)); card.classList.remove('recharged'); const w = card.querySelector('.cooldown-wipe'); if (w) { const angle = cd > 0 ? (1 - cd / (deckMax[name] || 1)) * 360 : 360; w.style.background = `conic-gradient(from 0deg, transparent 0deg ${angle.toFixed(2)}deg, rgba(0,0,0,.68) ${angle.toFixed(2)}deg 360deg)`; } continue; }
       card.classList.toggle('active', name === 'attack' ? hero.action?.type === 'attack' : name === 'ultimate' ? (!!squad || !!parade || !!flock || !!serpent || !!quake || !!finale || !!skyfall || !!orrery || !!sunroar || !!delivery || !!tortoise || (selectedCharacter==='fenr'&&(hero.form==='wolf'||hero.transformPending>0))) : hero.action?.type === name);
       card.classList.toggle('on-cooldown', cd > 0); card.setAttribute('aria-disabled', String(cd > 0 || (name==='ultimate'&&selectedCharacter==='fenr'&&(hero.form==='wolf'||hero.transformPending>0))));
       card.classList.toggle('recharged',(rechargePulse[name]||0)>0);
@@ -1884,7 +1971,7 @@
     const slide = !visible ? -110 : ct < .16 ? -110 * Math.pow(1 - ct / .16,3) : ct > .57 ? 110 * Math.pow((ct-.57)/.21,2) : 0;
     cutin.style.transform = `translateX(${slide}%) rotate(-3deg)`;
     cutin.style.opacity = visible ? '1' : '0';
-    document.querySelectorAll('.combo-dots i').forEach((dot, i) => dot.classList.toggle('lit', hero.action?.type === 'attack' && hero.action.index > i));
+    document.querySelectorAll('.combo-dots i').forEach((dot, i) => dot.classList.toggle('lit', meActor().action?.type === 'attack' && meActor().action.index > i));
   }
   // Cut-in art per fighter. Only the two fighters of the current fight are warmed (at start/select), so a banner never waits
   // for its image; until the right image is decoded the art stays hidden (see updateHud) instead of showing the last one.
@@ -1892,22 +1979,22 @@
   const CUTIN_ART={fenr:'assets/fenr/ui/cutin.webp',mira:'assets/mira/ui/cutin.webp',cora:'assets/cora/ui/cutin.webp',naja:'assets/naja/ui/cutin.webp',haldor:'assets/haldor/ui/cutin.webp',zanni:'assets/zanni/ui/cutin.webp',isolde:'assets/isolde/ui/cutin.webp',rhea:'assets/rhea/ui/cutin.webp',solan:'assets/solan/ui/cutin.webp',nib:'assets/nib/ui/cutin.webp',edda:'assets/edda/ui/cutin.webp',arco:'assets/ui/ultimate-cutin.webp'};
   let cutinWarm=[];
   function warmCutins(){superAssets(selectedCharacter);cutinWarm=[...new Set([selectedCharacter,opponentCharacter])].map(id=>CUTIN_ART[id]).filter(Boolean).map(src=>{const im=new Image();im.decoding='async';im.src=src;return im;});}
-  function setPaused(value) { paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
+  function setPaused(value) { if (value && netRole) return; paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
   function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML=(menuOpen?'Kembali ke menu':'Kembali ke arena')+' <span>↗</span>'; $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
   const handled = new Set(['w','a','s','d',' ','i','o','p','u','escape','r']);
   window.addEventListener('keydown', e => { if (!handled.has(e.key.toLowerCase()) || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return; e.preventDefault(); if (!e.repeat) press(e.key); });
   // Local two-player keys (only while such a match runs): P2 on the arrows and / . , M N (or Numpad 0-4), P1 aliases.
   window.addEventListener('keydown', e => {
-    if (!localP2 || menuOpen || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (!localP2 || netRole || menuOpen || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
     const alias = P1_ALIAS[e.code]; if (alias) { e.preventDefault(); if (!e.repeat) press(alias); return; }
     const k = P2_KEYS[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat) p2Press(k);
   });
-  window.addEventListener('keyup', e => { if (!localP2) return; const alias = P1_ALIAS[e.code]; if (alias) release(alias); const k = P2_KEYS[e.code]; if (k) p2keys.delete(k); });
+  window.addEventListener('keyup', e => { if (!localP2 || netRole) return; const alias = P1_ALIAS[e.code]; if (alias) release(alias); const k = P2_KEYS[e.code]; if (k) p2keys.delete(k); });
   window.addEventListener('keyup', e => { if (handled.has(e.key.toLowerCase())) { if(!/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName))e.preventDefault(); release(e.key); } });
   window.addEventListener('blur', clearInput); document.addEventListener('visibilitychange', () => { clearInput(); lastTime = 0; accumulator = 0;if(document.hidden)systemAnnouncer?.clear(); syncUltimateVoice(); syncMusic(); });
   window.addEventListener('resize', resize); canvas.addEventListener('pointerdown', () => { unlockAudio(); canvas.focus(); });
-  $('#pause-btn').onclick = () => { unlockAudio(); setPaused(!paused); }; $('#resume-btn').onclick = () => setPaused(false); $('#restart-btn').onclick = reset;
+  $('#pause-btn').onclick = () => { unlockAudio(); if (netRole) netAskLeave(); else setPaused(!paused); }; $('#resume-btn').onclick = () => setPaused(false); $('#restart-btn').onclick = reset;
   $('#back-menu').onclick=()=>{closeSettings();setMenuOpen(true);window.FrontEnd?.home();};
   $('#character-select').onchange=e=>selectCharacter(e.target.value);
   $('#ai-toggle').onchange=e=>{aiEnabled=e.target.checked;dummy.action=null;dummy.vx=0;dummy.state='idle';};
@@ -1922,10 +2009,10 @@
   function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.aetherFullscreen) { window.parent.aetherFullscreen(); return; } } catch (_) {} window.parent.postMessage({ type: 'aether-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); else document.exitFullscreen?.(); }
   $('#fullscreen-btn').onclick = toggleFullscreen;
   for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else if (name === 'super') startSuper(); else cast(name); canvas.focus({ preventScroll: true }); };
-  function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; draw(); requestAnimationFrame(tick); }
+  function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; if (netRole === 'host' && netSend && !menuOpen && stamp - netLastSent >= 33) { netLastSent = stamp; netSend(netExport(), false); } draw(); requestAnimationFrame(tick); }
   // Deterministic QA interface: set manual=true, reset(), press/release(), advance(seconds).
   // Positions represent feet. No networking or persistent state is changed by this interface.
-  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name, owner: superUlt.owner } : null, p2: (key, down) => down ? p2Press(key) : p2keys.delete(key), clearInput, draw, manual: false,
+  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, netStart, netMessage, netPeerLost, netStop, netExport, netImport, me: meActor, netRole: () => netRole, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name, owner: superUlt.owner } : null, p2: (key, down) => down ? p2Press(key) : p2keys.delete(key), clearInput, draw, manual: false,
     advance(seconds) { for (let i = 0; i < Math.round(seconds * 120); i++) step(1 / 120); draw(); return this.snapshot(); },
     snapshot() { return { ready, paused, settingsOpen, menuOpen, selectedCharacter, opponentCharacter, difficulty, stageId, match:match?{...match}:null,roundCues:[...roundCues],aiEnabled, time, stepCount, hero: JSON.parse(JSON.stringify(hero)), dummy: { ...dummy }, healthBars:{hero:hpLayers(hero.hp),dummy:hpLayers(currentDummyHP())}, squad: squad ? JSON.parse(JSON.stringify(squad)) : null, enemySquad:enemySquad?JSON.parse(JSON.stringify(enemySquad)):null, parade: parade ? JSON.parse(JSON.stringify(parade)) : null, enemyParade: enemyParade ? JSON.parse(JSON.stringify(enemyParade)) : null, flock: flock ? JSON.parse(JSON.stringify(flock)) : null, enemyFlock: enemyFlock ? JSON.parse(JSON.stringify(enemyFlock)) : null, serpent: serpent ? JSON.parse(JSON.stringify(serpent)) : null, enemySerpent: enemySerpent ? JSON.parse(JSON.stringify(enemySerpent)) : null, quake: quake ? JSON.parse(JSON.stringify(quake)) : null, enemyQuake: enemyQuake ? JSON.parse(JSON.stringify(enemyQuake)) : null, finale: finale ? { ...finale } : null, enemyFinale: enemyFinale ? { ...enemyFinale } : null, skyfall: skyfall ? { ...skyfall } : null, enemySkyfall: enemySkyfall ? { ...enemySkyfall } : null, orrery: orrery ? { ...orrery } : null, enemyOrrery: enemyOrrery ? { ...enemyOrrery } : null, sunroar: sunroar ? { ...sunroar } : null, enemySunroar: enemySunroar ? { ...enemySunroar } : null, delivery: delivery ? { ...delivery } : null, enemyDelivery: enemyDelivery ? { ...enemyDelivery } : null, tortoise: tortoise ? { ...tortoise, spirit: undefined } : null, enemyTortoise: enemyTortoise ? { ...enemyTortoise, spirit: undefined } : null, playable: playable(), cutinVisible: !!squad && squad.t < SQUAD.cutinDuration, totalDamage, comboHits, comboDamage, hitstop, cinematic, trauma, projectileCount: projectiles.length, audioState: audio?.state || 'uninitialized', audioSources, stageLoaded: !!images.stage, spriteLoaded: !!images.hero, manifestLoaded: !!manifest }; },
     startMatch,setMenuOpen,menuSound,openSettings,toggleFullscreen,music(){return music?{on:musicOn,volume:musicVolume,playing:!music.paused,src:MUSIC_PATH,element:music}:null;},onRoundCue(fn){roundAnnouncer=typeof fn==='function'?fn:null;},

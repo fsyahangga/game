@@ -1,6 +1,6 @@
 # Main online: akun dan teman
 
-Tahap 1 dari main antar akun: login Google, profil dengan kode teman, dan daftar teman. Tarung online antar akun menyusul di tahap berikutnya (tombol **Tantang** sudah ada tapi belum aktif).
+Main antar akun: login Google, profil dengan kode teman, daftar teman, dan tarung online antar teman.
 
 - Kode: [online.js](../online.js) (modul Firebase, dimuat dari `index.html`), layar **Teman** di [menu.js](../menu.js), gaya `.ol-*` di [dedemit.css](../dedemit.css).
 - Project Firebase: `wardedemit` (paket gratis Spark). Config web di `online.js` memang publik; yang menjaga data adalah **Security Rules**.
@@ -21,8 +21,21 @@ Kalau `firestore.rules` diubah, ulangi langkah 3.
 | `users/{uid}/friends/{fid}` | teman (nama, foto, kode) | dibaca pemiliknya; dibuat dua sisi saat permintaan diterima; dihapus salah satu |
 | `codes/{DMT-XXXX}` | pemilik kode teman | dibuat sekali oleh pemiliknya, unik |
 | `friendRequests/{dari}_{ke}` | permintaan pertemanan | hanya dua pemain itu |
+| `matches/{id}` | tantangan: dedemit, arena, status, offer/answer WebRTC | hanya penantang dan temannya; dibuat hanya untuk teman; dihapus setelah selesai |
 
 Email tidak disimpan di Firestore. Status online: `lastSeen` diperbarui tiap 60 detik selama game terbuka; teman dianggap online kalau `lastSeen` kurang dari 150 detik lalu.
+
+## Tarung online
+
+1. Di **Teman**, tombol **Tantang** aktif untuk teman yang sedang online. Penantang (host) memilih dedemit dan arena, lalu **Kirim tantangan**.
+2. Teman melihat banner "menantangmu bertarung!" di layar menu mana pun. **Terima**, pilih dedemit. Tantangan berlaku 90 detik.
+3. Kedua browser tersambung langsung lewat WebRTC (alamatnya ditukar lewat dokumen `matches/{id}`, server STUN Google). Kalau dalam 25 detik belum tersambung, muncul "Koneksi gagal".
+4. Host menjalankan pertarungan sebagai P1. Tamu adalah P2 dan mengirim tombolnya (WASD/Spasi/I O P U atau tombol sentuh) ke host. Host mengirim keadaan game sekitar 30 kali per detik; di antaranya layar tamu terus menyimulasikan dengan input yang sama supaya gerakan mulus. Tombol tamu terasa telat sebesar ping (biasanya 30–80 ms).
+5. Esc atau tombol Ⅱ = keluar dari pertarungan (lawan melihat "LAWAN KELUAR"). Jeda dan pengaturan tidak bisa dipakai selama tarung online.
+
+Kode: `netStart`, `netExport`/`netImport`, `netMessage` di [game.js](../game.js); koneksi di bagian "online fight" [online.js](../online.js).
+
+**Batasan:** tanpa server TURN, sebagian jaringan ketat (beberapa jaringan seluler atau kantor) tidak bisa tersambung langsung. Server TURN biasanya berbayar; bisa ditambahkan ke `ICE` di online.js nanti.
 
 ## Kuota gratis
 

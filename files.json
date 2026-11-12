@@ -1,6 +1,6 @@
 {
   "files": 327,
-  "bytes": 43666010,
+  "bytes": 43689473,
   "list": [
     {
       "file": "index.html",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 19752
+      "bytes": 21284
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -232,15 +232,15 @@
     },
     {
       "file": "online.js",
-      "bytes": 10674
+      "bytes": 19179
     },
     {
       "file": "game.js",
-      "bytes": 190362
+      "bytes": 198735
     },
     {
       "file": "menu.js",
-      "bytes": 37101
+      "bytes": 42139
     },
     {
       "file": "match.js",
@@ -252,7 +252,7 @@
     },
     {
       "file": "touch.js",
-      "bytes": 4965
+      "bytes": 4980
     },
     {
       "file": "fenr.js",
