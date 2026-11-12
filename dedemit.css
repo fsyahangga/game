@@ -224,3 +224,19 @@ body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 .ol-result{flex:none;width:64px;text-align:center;padding:4px 0;font-weight:700;font-size:14px;border:1px solid}
 .ol-history li.won .ol-result{color:#9fe0b8;border-color:#3d7a57}
 .ol-history li.lost .ol-result{color:#ff9d8a;border-color:#7a3d3d}
+
+/* Home menu with six entries: the main fight stays a full row, the rest sit two per row so the list fits short screens. */
+.home-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:470px}
+.home-nav button:first-child,.home-nav button:last-child:nth-child(even){grid-column:1/-1}
+.home-nav button:not(:first-child){padding-left:13px;padding-right:12px}
+.home-nav button:not(:first-child) small{display:none}
+.home-nav button:not(:first-child)>span:nth-child(2){font-size:clamp(16px,2.9vh,21px)}
+.home-nav button:not(:first-child) b{font-size:20px}
+
+/* Super card on the desktop deck: bigger, gold frame that pulses, and a SUPER! tag so a full bar is hard to miss. */
+.skill-card.super{position:relative;margin-left:6px}
+.skill-card.super .skill-art{transform:scale(1.12);transform-origin:bottom center;border:2px solid #ffd76a;box-shadow:0 0 0 2px #7a4d06,0 0 22px 6px #ffb84acc;animation:super-glow .9s ease-in-out infinite alternate}
+.skill-card.super::before{content:'SUPER!';position:absolute;top:-22px;left:50%;transform:translateX(-50%);z-index:5;padding:2px 8px;background:#ffd76a;color:#1a140a;font:800 12px/1.2 Rajdhani,Arial,sans-serif;letter-spacing:1.5px;border-radius:3px;box-shadow:0 0 12px #ffb84a;white-space:nowrap;animation:super-tag .9s ease-in-out infinite alternate}
+.skill-card.super .skill-name{margin-top:9px}
+@keyframes super-tag{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.skill-card.super::before{animation:none}}
