@@ -1,10 +1,10 @@
 {
-  "files": 289,
-  "bytes": 39352297,
+  "files": 326,
+  "bytes": 43633981,
   "list": [
     {
       "file": "index.html",
-      "bytes": 17758
+      "bytes": 17813
     },
     {
       "file": "mobile.html",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 14228
+      "bytes": 14280
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -83,8 +83,156 @@
       "bytes": 30769
     },
     {
+      "file": "assets/ghosts/super/beguganjang-cutin.webp",
+      "bytes": 90106
+    },
+    {
+      "file": "assets/ghosts/super/beguganjang-fx.webp",
+      "bytes": 66880
+    },
+    {
+      "file": "assets/ghosts/super/beguganjang-pose.webp",
+      "bytes": 141494
+    },
+    {
+      "file": "assets/ghosts/super/eyangsukmocapo-cutin.webp",
+      "bytes": 186390
+    },
+    {
+      "file": "assets/ghosts/super/eyangsukmocapo-fx.webp",
+      "bytes": 85968
+    },
+    {
+      "file": "assets/ghosts/super/eyangsukmocapo-pose.webp",
+      "bytes": 119988
+    },
+    {
+      "file": "assets/ghosts/super/genderuwo-cutin.webp",
+      "bytes": 169110
+    },
+    {
+      "file": "assets/ghosts/super/genderuwo-fx.webp",
+      "bytes": 118078
+    },
+    {
+      "file": "assets/ghosts/super/genderuwo-pose.webp",
+      "bytes": 183722
+    },
+    {
+      "file": "assets/ghosts/super/jenglot-cutin.webp",
+      "bytes": 126246
+    },
+    {
+      "file": "assets/ghosts/super/jenglot-fx.webp",
+      "bytes": 68062
+    },
+    {
+      "file": "assets/ghosts/super/jenglot-pose.webp",
+      "bytes": 73248
+    },
+    {
+      "file": "assets/ghosts/super/kuntilanak-cutin.webp",
+      "bytes": 132676
+    },
+    {
+      "file": "assets/ghosts/super/kuntilanak-fx.webp",
+      "bytes": 112428
+    },
+    {
+      "file": "assets/ghosts/super/kuntilanak-pose.webp",
+      "bytes": 141970
+    },
+    {
+      "file": "assets/ghosts/super/kuyang-cutin.webp",
+      "bytes": 122034
+    },
+    {
+      "file": "assets/ghosts/super/kuyang-fx.webp",
+      "bytes": 100872
+    },
+    {
+      "file": "assets/ghosts/super/kuyang-pose.webp",
+      "bytes": 138040
+    },
+    {
+      "file": "assets/ghosts/super/leyak-cutin.webp",
+      "bytes": 163892
+    },
+    {
+      "file": "assets/ghosts/super/leyak-fx.webp",
+      "bytes": 85824
+    },
+    {
+      "file": "assets/ghosts/super/leyak-pose.webp",
+      "bytes": 166718
+    },
+    {
+      "file": "assets/ghosts/super/manifest.js",
+      "bytes": 4613
+    },
+    {
+      "file": "assets/ghosts/super/palasik-cutin.webp",
+      "bytes": 90114
+    },
+    {
+      "file": "assets/ghosts/super/palasik-fx.webp",
+      "bytes": 75308
+    },
+    {
+      "file": "assets/ghosts/super/palasik-pose.webp",
+      "bytes": 50608
+    },
+    {
+      "file": "assets/ghosts/super/pocong-cutin.webp",
+      "bytes": 157120
+    },
+    {
+      "file": "assets/ghosts/super/pocong-fx.webp",
+      "bytes": 80748
+    },
+    {
+      "file": "assets/ghosts/super/pocong-pose.webp",
+      "bytes": 100012
+    },
+    {
+      "file": "assets/ghosts/super/sundelbolong-cutin.webp",
+      "bytes": 134030
+    },
+    {
+      "file": "assets/ghosts/super/sundelbolong-fx.webp",
+      "bytes": 59822
+    },
+    {
+      "file": "assets/ghosts/super/sundelbolong-pose.webp",
+      "bytes": 121396
+    },
+    {
+      "file": "assets/ghosts/super/tuyul-cutin.webp",
+      "bytes": 116918
+    },
+    {
+      "file": "assets/ghosts/super/tuyul-fx.webp",
+      "bytes": 149652
+    },
+    {
+      "file": "assets/ghosts/super/tuyul-pose.webp",
+      "bytes": 89056
+    },
+    {
+      "file": "assets/ghosts/super/wewegombel-cutin.webp",
+      "bytes": 178322
+    },
+    {
+      "file": "assets/ghosts/super/wewegombel-fx.webp",
+      "bytes": 101216
+    },
+    {
+      "file": "assets/ghosts/super/wewegombel-pose.webp",
+      "bytes": 172384
+    },
+    {
       "file": "game.js",
-      "bytes": 180095
+      "bytes": 184217
     },
     {
       "file": "menu.js",
@@ -1152,7 +1300,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 16143
+      "bytes": 18533
     },
     {
       "file": "sw.js",

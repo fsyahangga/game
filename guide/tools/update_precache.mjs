@@ -1,7 +1,7 @@
 // Rebuilds precache.js and files.json from the files on disk (sizes + content hashes).
 // Run from the project root after changing or adding runtime files:   node guide/tools/update_precache.mjs
 // New runtime files: add them to EXTRA below (or to the list in precache.js) so preload.js caches them.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
@@ -12,6 +12,8 @@ const sandbox = { self: {} };
 vm.runInNewContext(readFileSync('precache.js', 'utf8'), sandbox);
 const old = sandbox.self.AETHER_PRECACHE;
 const paths = old.files.map(f => f[0]).filter(p => !DROP.includes(p));
+// Super ultimate art built by guide/tools/build_super_assets.py (the .png sources are not shipped).
+if (existsSync('assets/ghosts/super')) for (const f of readdirSync('assets/ghosts/super').sort()) if (/\.(webp|js)$/.test(f)) EXTRA.push('assets/ghosts/super/' + f);
 for (const p of EXTRA) if (!paths.includes(p)) paths.splice(Math.max(0, paths.indexOf('game.js')), 0, p);
 
 const hash = buf => createHash('sha1').update(buf).digest('hex').slice(0, 12);

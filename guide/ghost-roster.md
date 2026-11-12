@@ -49,7 +49,7 @@ Setiap serangan pemain yang kena mengisi bar mana di bawah HP: `4 + damage × 0,
 | Jenglot | Ilmu Batara Karang | ilmu hitam asal-muasal jenglot |
 | Begu Ganjang | Jangan Menengadah | makin ditatap makin tinggi |
 
-Nama, teks cut-in, dan legenda super ada di `SUPERS` dalam [ghosts.js](../ghosts.js).
+Nama, teks cut-in, dan legenda super ada di `SUPERS` dalam [ghosts.js](../ghosts.js). Prompt gambar AI untuk cut-in, pose, dan efek super tiap dedemit ada di [super-ultimate-prompts.md](super-ultimate-prompts.md).
 
 ## Tali Pocong (mekanik baru)
 

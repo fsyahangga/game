@@ -359,17 +359,32 @@
     const g = window.GHOSTS?.[id];
     return { ...(g?.super || { name: 'SUPER ULTIMATE', top: 'SUPER', bottom: 'ULTIMATE', detail: 'SERANGAN PAMUNGKAS' }), ghost: g?.name || String(id).toUpperCase(), color: g?.color || '#ffe2a0' };
   }
+  // Super art per slot from assets/ghosts/super/manifest.js (guide/tools/build_super_assets.py): a cut-in banner, a 4-pose
+  // sheet in the slot's atlas cell/anchor, and a 4-frame hit effect. Loaded when a fighter is picked; anything missing
+  // or still loading falls back to the generic visuals (ultimate cut-in art, colour pillars, the ultimate pose).
+  const superImgs = {};
+  const imgReady = im => !!(im && im.complete && im.naturalWidth);
+  function superAssets(id) {
+    const a = window.SUPER_ASSETS?.[id]; if (!a) return null;
+    if (!superImgs[id]) {
+      const load = src => { if (!src) return null; const im = new Image(); im.decoding = 'async'; im.src = src; return im; };
+      superImgs[id] = { cutin: load(a.cutin), pose: a.pose ? { ...a.pose, img: load(a.pose.src) } : null, fx: a.fx ? { ...a.fx, img: load(a.fx.src) } : null };
+    }
+    return superImgs[id];
+  }
   function startSuper() {
     if (!canAct() || superUlt || hero.mana < BALANCE.mana.max) return false;
     if (hero.action?.type === 'attack') hero.action = null;
     if (hero.action || hero.transformPending > 0) return false;
-    const info = superInfo(), U = BALANCE.superUlt;
+    const info = superInfo(), U = BALANCE.superUlt, assets = superAssets(selectedCharacter);
     hero.mana = 0; hero.runDirection = 0; hero.vx = 0; hero.rollBuffer = null; hero.doublePose = 0;
     hero.invuln = Math.max(hero.invuln, U.cutin + U.duration + .3);
-    hero.action = { type: 'super', name: 'ultimate', t: 0, duration: .7, fired: true, hit: false };
+    // The action's clock only runs after the frozen cut-in, so the fighter holds the super poses through all five strikes.
+    hero.action = { type: 'super', name: 'ultimate', t: 0, duration: U.duration, fired: true, hit: false };
     state('ultimate');
-    const art = new Image(); art.src = CUTIN_ART[selectedCharacter] || CUTIN_ART.arco;
-    superUlt = { t: 0, strike: 0, hits: 0, landed: 0, info, art };
+    let art = assets?.cutin, custom = true;
+    if (!imgReady(art)) { art = new Image(); art.src = CUTIN_ART[selectedCharacter] || CUTIN_ART.arco; custom = false; }
+    superUlt = { t: 0, strike: 0, hits: 0, landed: 0, info, art, custom, assets, facing: hero.facing };
     stopUltimateVoice(); sound('ultimate'); trauma = Math.min(1, trauma + .3);
     return true;
   }
@@ -380,8 +395,9 @@
     if (s.t < U.cutin) { cinematic = Math.max(cinematic, .45); hero.animTime += dt; return true; }
     s.strike += dt;
     while (s.hits < U.strikes.length && s.strike >= U.strikes[s.hits]) {
-      const i = s.hits++, last = i === U.strikes.length - 1, y = dummy.y - 90;
-      effects.push({ type: 'superPillar', x: dummy.x, y: CONFIG.groundY, life: last ? .85 : .5, maxLife: last ? .85 : .5, color: s.info.color, last });
+      const i = s.hits++, last = i === U.strikes.length - 1, y = dummy.y - 90, fx = s.assets?.fx;
+      const life = fx ? (last ? .9 : .6) : (last ? .85 : .5);
+      effects.push({ type: 'superPillar', x: dummy.x, y: CONFIG.groundY, life, maxLife: life, color: s.info.color, last, fx, facing: s.facing });
       if (hitDummy(U.damage[i], last ? 320 : 30, s.info.color, hero.x, y, last, false, last ? 2.4 : 1.1, true)) s.landed++;
       spawnParticles(dummy.x, y, s.info.color, last ? 42 : 18, last ? 430 : 260);
       if (last) { sound('ultimate'); cinematic = Math.max(cinematic, .5); }
@@ -389,37 +405,62 @@
     if (s.strike >= U.duration) superUlt = null;
     return false;
   }
+  // The fighter's own super poses (assets/ghosts/super/<dedemit>-pose.webp) instead of the atlas while a super is out:
+  // two poses during the cut-in, the third at the first strikes, the fourth held to the finish.
+  function drawSuperPose() {
+    const s = superUlt, P = s?.assets?.pose; if (!P || !imgReady(P.img)) return false;
+    const U = BALANCE.superUlt, i = Math.min(P.frames - 1, s.t < U.cutin * .45 ? 0 : s.t < U.cutin ? 1 : s.strike < .55 ? 2 : 3);
+    ctx.save(); ctx.translate(Math.round(hero.x), Math.round(hero.y)); ctx.scale(hero.facing, 1); ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(P.img, P.cellW * i, 0, P.cellW, P.cellH, -P.ax, -P.ay, P.cellW, P.cellH); ctx.restore();
+    return true;
+  }
   // Full-screen super cut-in, drawn in screen space over the arena: dark veil, a tilted band in the dedemit's colour with
-  // its cut-in art, and the super name from ghosts.js.
+  // its cut-in art, and the super name from ghosts.js. The super art (character in its right half) is shown whole on the
+  // right of the band with the name on the left; the old ultimate art keeps the original layout.
   function drawSuperCutin() {
     const s = superUlt, U = BALANCE.superUlt; if (!s || s.t >= U.cutin) return;
-    const t = s.t, c = s.info.color, vw = viewW, vh = viewH;
+    const t = s.t, c = s.info.color, vw = viewW, vh = viewH, art = s.art, custom = s.custom && imgReady(art);
     const enter = Math.min(1, t / .16), leave = t > U.cutin - .2 ? (t - (U.cutin - .2)) / .2 : 0;
     const slide = (1 - Math.pow(enter, 3)) * -vw + Math.pow(leave, 2) * vw;
     ctx.save();
-    ctx.fillStyle = `rgba(4,6,10,${.72 * Math.min(1, t * 6) * (1 - leave * .6)})`; ctx.fillRect(0, 0, vw, vh);
-    const bandH = Math.max(150, Math.min(260, vh * .34)), cy = vh * .46;
+    ctx.fillStyle = `rgba(4,6,10,${.68 * Math.min(1, t * 6) * (1 - leave * .6)})`; ctx.fillRect(0, 0, vw, vh);
+    const bandH = custom ? Math.max(170, Math.min(320, vh * .42)) : Math.max(150, Math.min(260, vh * .34)), cy = vh * .46;
     ctx.translate(vw / 2 + slide, cy); ctx.rotate(-.05);
     const g = ctx.createLinearGradient(-vw / 2, 0, vw / 2, 0); g.addColorStop(0, '#0b0d12'); g.addColorStop(.45, '#16121a'); g.addColorStop(1, c + '55');
     ctx.fillStyle = g; ctx.fillRect(-vw * .6, -bandH / 2, vw * 1.2, bandH);
+    let textLeft = vw * .04, textRoom = vw * .44;
+    if (custom) {
+      // whole picture at band height, right edge on the screen's right edge, faded into the band on its left side
+      const ah = bandH, full = ah * art.naturalWidth / art.naturalHeight, aw = Math.min(vw * .78, full), ax = vw * .5 - aw + 12 - t * 18;
+      const sw = art.naturalWidth * aw / full;
+      ctx.save(); ctx.beginPath(); ctx.rect(-vw * .6, -bandH / 2, vw * 1.2, bandH); ctx.clip(); ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(art, art.naturalWidth - sw, 0, sw, art.naturalHeight, ax, -ah / 2, aw, ah);
+      const fade = ctx.createLinearGradient(ax, 0, ax + aw * .45, 0); fade.addColorStop(0, '#0b0d12'); fade.addColorStop(1, '#0b0d1200');
+      ctx.fillStyle = fade; ctx.fillRect(ax - 2, -bandH / 2, aw * .45 + 2, bandH); ctx.restore();
+      textLeft = -vw * .46; textRoom = Math.max(vw * .4, ax + aw * .3 - textLeft);
+    }
     ctx.fillStyle = c; ctx.fillRect(-vw * .6, -bandH / 2 - 5, vw * 1.2, 5); ctx.fillRect(-vw * .6, bandH / 2, vw * 1.2, 5);
     // speed lines
     ctx.globalAlpha = .25; ctx.fillStyle = c;
     for (let i = 0; i < 14; i++) { const y = -bandH / 2 + ((i * 37 + t * 900) % bandH), x = ((i * 211 + t * 2600) % (vw * 1.2)) - vw * .6; ctx.fillRect(x, y, 90 + (i % 4) * 40, 2); }
     ctx.globalAlpha = 1;
-    if (s.art.complete && s.art.naturalWidth) {
+    if (!custom && art.complete && art.naturalWidth) {
       ctx.save(); ctx.beginPath(); ctx.rect(-vw * .6, -bandH / 2, vw * .62, bandH); ctx.clip();
-      const ah = bandH * 1.5, aw = ah * s.art.naturalWidth / s.art.naturalHeight;
-      ctx.drawImage(s.art, -vw * .02 - aw + t * 40, -ah * .45, aw, ah); ctx.restore();
+      const ah = bandH * 1.5, aw = ah * art.naturalWidth / art.naturalHeight;
+      ctx.drawImage(art, -vw * .02 - aw + t * 40, -ah * .45, aw, ah); ctx.restore();
     }
-    const tx = vw * .04, fs = Math.max(34, Math.min(76, bandH * .3));
+    let fs = Math.max(30, Math.min(76, bandH * .27));
+    ctx.font = `900 ${Math.round(fs)}px Rajdhani, system-ui, sans-serif`;
+    const widest = Math.max(ctx.measureText(s.info.top).width, ctx.measureText(s.info.bottom).width);
+    if (widest > textRoom) fs = Math.max(22, fs * textRoom / widest);
+    const tx = textLeft;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.font = `700 ${Math.round(fs * .24)}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = c;
+    ctx.font = `700 ${Math.round(Math.max(11, fs * .24))}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = c;
     ctx.fillText('SUPER ULTIMATE · ' + s.info.ghost, tx, -fs * .95);
     ctx.font = `900 ${Math.round(fs)}px Rajdhani, system-ui, sans-serif`; ctx.lineWidth = 6; ctx.strokeStyle = '#05060a';
     ctx.strokeText(s.info.top, tx, -fs * .05); ctx.fillStyle = '#ffffff'; ctx.fillText(s.info.top, tx, -fs * .05);
     ctx.strokeText(s.info.bottom, tx, fs * .85); ctx.fillStyle = c; ctx.fillText(s.info.bottom, tx, fs * .85);
-    ctx.font = `700 ${Math.round(fs * .22)}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = '#e9e4da';
+    ctx.font = `700 ${Math.round(Math.max(10, fs * .22))}px Rajdhani, system-ui, sans-serif`; ctx.fillStyle = '#e9e4da';
     ctx.fillText(s.info.detail, tx, fs * 1.25);
     ctx.restore();
   }
@@ -1548,6 +1589,7 @@
   }
   function drawHero() {
     shadow(hero.x, CONFIG.groundY, Math.max(19, (selectedCharacter === 'mira' ? 63 : selectedCharacter === 'haldor' ? 58 : 52) - (CONFIG.groundY - hero.y) * .07), .20);
+    if (superUlt && drawSuperPose()) return;
     if (!images.hero || !manifest) return;
     const pose = heroPose(), index = pose.frame;
     let list = frames(pose.state); if (!list.length) list = frames('idle'); if (!list.length) return;
@@ -1591,7 +1633,8 @@
       if (e.type === 'slam') { ctx.strokeStyle = '#ccf0ff'; ctx.lineWidth = 8 * (1 - t) + 1; ctx.beginPath(); ctx.ellipse(0, -2, 35 + t * 240, 10 + t * 35, 0, 0, Math.PI * 2); ctx.stroke(); for (let i = -3; i <= 3; i++) { const height = (95 - Math.abs(i) * 12) * Math.sin(Math.PI * Math.min(t * 1.4, 1)); ctx.fillStyle = i % 2 ? '#76b1c9dd' : '#d7eff2cc'; ctx.beginPath(); ctx.moveTo(i * 48 - 15, 0); ctx.lineTo(i * 48 - 8, -height); ctx.lineTo(i * 48 + 16, -height * .6); ctx.lineTo(i * 48 + 21, 0); ctx.closePath(); ctx.fill(); } }
       if (e.type === 'charge' || e.type === 'ultimate-ring') { ctx.strokeStyle = '#e7bb79'; ctx.lineWidth = 3; const radius = e.type === 'charge' ? 100 - t * 65 : 70 + t * 150; ctx.rotate(realTime * 2); ctx.strokeRect(-radius * .7, -radius * .7, radius * 1.4, radius * 1.4); ctx.rotate(Math.PI / 4); ctx.strokeRect(-radius * .6, -radius * .6, radius * 1.2, radius * 1.2); ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke(); }
       // Super ultimate strike: a pillar of the dedemit's colour drops on the rival, with a ground ring.
-      if (e.type === 'superPillar') { const k = 1 - t, w = (e.last ? 120 : 70) * (.6 + .4 * k), h = 760; const g = ctx.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, e.color + '00'); g.addColorStop(.7, e.color + 'aa'); g.addColorStop(1, '#ffffffee'); ctx.fillStyle = g; ctx.fillRect(-w / 2, -h, w, h); ctx.fillStyle = '#ffffffcc'; ctx.fillRect(-w * .12, -h, w * .24, h); ctx.strokeStyle = e.color; ctx.lineWidth = 7 * k + 1; ctx.beginPath(); ctx.ellipse(0, -2, 40 + t * (e.last ? 300 : 160), 10 + t * 34, 0, 0, Math.PI * 2); ctx.stroke(); }
+      if (e.type === 'superPillar' && e.fx && imgReady(e.fx.img)) { const F4 = e.fx, f = Math.min(F4.frames - 1, Math.floor(t * F4.frames)), sc = e.last ? 1.35 : 1, w = F4.cellW * sc, h = F4.cellH * sc; ctx.scale(e.facing || 1, 1); ctx.imageSmoothingEnabled = true; ctx.globalAlpha = Math.min(1, e.life / e.maxLife * 4); ctx.drawImage(F4.img, F4.cellW * f, 0, F4.cellW, F4.cellH, -w / 2, -h + 6, w, h); ctx.strokeStyle = e.color; ctx.globalAlpha *= .6; ctx.lineWidth = 5 * (1 - t) + 1; ctx.beginPath(); ctx.ellipse(0, -2, 40 + t * (e.last ? 260 : 130), 9 + t * 26, 0, 0, Math.PI * 2); ctx.stroke(); }
+      else if (e.type === 'superPillar') { const k = 1 - t, w = (e.last ? 120 : 70) * (.6 + .4 * k), h = 760; const g = ctx.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, e.color + '00'); g.addColorStop(.7, e.color + 'aa'); g.addColorStop(1, '#ffffffee'); ctx.fillStyle = g; ctx.fillRect(-w / 2, -h, w, h); ctx.fillStyle = '#ffffffcc'; ctx.fillRect(-w * .12, -h, w * .24, h); ctx.strokeStyle = e.color; ctx.lineWidth = 7 * k + 1; ctx.beginPath(); ctx.ellipse(0, -2, 40 + t * (e.last ? 300 : 160), 10 + t * 34, 0, 0, Math.PI * 2); ctx.stroke(); }
       if (e.type === 'drone-laser') {
         const dx = e.endX - e.x, dy = e.endY - e.y, length = Math.hypot(dx, dy);
         ctx.rotate(Math.atan2(dy, dx)); ctx.lineCap = 'round';
@@ -1800,7 +1843,7 @@
   function ghostCutin(cutin,key,owner){const g=window.GHOSTS?.[key];if(!g)return;cutin.querySelector('.cutin-kicker').textContent=g.name+' / '+(owner||'PLAYER');cutin.querySelector('strong').innerHTML=g.cutin.top+'<br><em>'+g.cutin.bottom+'</em>';cutin.querySelector('.cutin-detail').textContent=g.cutin.detail;cutin.setAttribute('aria-label',g.name+' ultimate: '+g.names[3]);}
   const CUTIN_ART={fenr:'assets/fenr/ui/cutin.webp',mira:'assets/mira/ui/cutin.webp',cora:'assets/cora/ui/cutin.webp',naja:'assets/naja/ui/cutin.webp',haldor:'assets/haldor/ui/cutin.webp',zanni:'assets/zanni/ui/cutin.webp',isolde:'assets/isolde/ui/cutin.webp',rhea:'assets/rhea/ui/cutin.webp',solan:'assets/solan/ui/cutin.webp',nib:'assets/nib/ui/cutin.webp',edda:'assets/edda/ui/cutin.webp',arco:'assets/ui/ultimate-cutin.webp'};
   let cutinWarm=[];
-  function warmCutins(){cutinWarm=[...new Set([selectedCharacter,opponentCharacter])].map(id=>CUTIN_ART[id]).filter(Boolean).map(src=>{const im=new Image();im.decoding='async';im.src=src;return im;});}
+  function warmCutins(){superAssets(selectedCharacter);cutinWarm=[...new Set([selectedCharacter,opponentCharacter])].map(id=>CUTIN_ART[id]).filter(Boolean).map(src=>{const im=new Image();im.decoding='async';im.src=src;return im;});}
   function setPaused(value) { paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
   function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML=(menuOpen?'Kembali ke menu':'Kembali ke arena')+' <span>↗</span>'; $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
