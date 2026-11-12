@@ -142,3 +142,56 @@ html.touch .install-pill{margin-right:56px}
 .kitab-super-art img{width:100%;height:100%;object-fit:cover;display:block}
 .kitab-super-art figcaption{position:absolute;left:0;bottom:0;padding:22px 16px 10px;width:70%;background:linear-gradient(90deg,#0b0d12ee,#0b0d1200);color:#fff;font:700 clamp(18px,2.4vw,26px)/1 Rajdhani,Arial,sans-serif;letter-spacing:.5px}
 .kitab-super-art figcaption small{display:block;font-size:11px;letter-spacing:2px;color:var(--ghost);margin-bottom:4px;text-transform:uppercase}
+
+/* Local two-player: P2's energi sukma bar mirrors P1's under the rival HP; the fill grows from the right. */
+.mana-frame-2{display:none}
+body.local2p .mana-frame-2{display:flex}
+.mana-frame-2 .mana-fill{margin-left:auto}
+.mana-frame-2 b{text-align:left}
+.ci-2p .ci-what b{color:var(--kunyit,#d9a23a)}
+html.touch .ci-2p{display:none}
+
+/* Online (online.js): account chip on the home screen and the Teman page. */
+.ol-chip{display:inline-flex;align-items:center;gap:8px;margin-right:12px;padding:4px 14px 4px 4px;border:1px solid #d9a23a88;border-radius:999px;background:#0e1a16d9;color:var(--kafan,#efe6d2);font:700 14px Rajdhani,Arial,sans-serif;cursor:pointer;max-width:220px}
+.ol-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ol-chip:hover,.ol-chip:focus-visible{border-color:#f3d48a;background:#1b2a22}
+.ol-chip .ol-g{width:22px;height:22px;margin-left:6px}
+.ol-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;background:#2b3a32;display:inline-grid;place-items:center;color:#f3d48a;font:700 15px Rajdhani,Arial,sans-serif;text-transform:uppercase}
+.ol-layout{width:min(1180px,92%);margin:22px auto 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;font-family:Rajdhani,Arial,sans-serif;color:#e9e4da}
+.ol-panel{min-width:0;background:#0d1714e6;border:1px solid #d9a23a55;box-shadow:0 14px 40px #0009;padding:20px 22px;position:relative}
+.ol-panel h2{margin:0 0 12px;font:400 30px/1 var(--fell,'IM Fell English',serif);color:#f3d48a}
+.ol-panel h2 small{font:700 14px Rajdhani,Arial,sans-serif;color:#b9b2a0;margin-left:6px}
+.ol-panel h3{margin:18px 0 8px;font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:#c7b58c}
+.ol-panel p{margin:0 0 12px;font-size:17px;line-height:1.45}
+.ol-signin{grid-column:1/-1;max-width:620px;justify-self:center;text-align:center}
+.ol-google{display:inline-flex;align-items:center;gap:12px;padding:12px 22px;border:0;border-radius:6px;background:#fff;color:#1f1f1f;font:700 18px Rajdhani,Arial,sans-serif;cursor:pointer;margin:6px 0 14px}
+.ol-google .ol-g{width:22px;height:22px}
+.ol-google:disabled{opacity:.6;cursor:wait}
+.ol-privacy,.ol-hint{display:block;color:#a9a392;font-size:13px;line-height:1.4}
+.ol-me{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+.ol-me>.ol-avatar{width:72px;height:72px;font-size:34px;border:2px solid #d9a23a}
+.ol-me-fields label,.ol-label{display:block;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#c7b58c;margin:2px 0 5px}
+.ol-me-fields .ol-row+.ol-label{margin-top:12px}
+.ol-signout{grid-column:2;justify-self:start}
+.ol-row{display:flex;gap:8px;align-items:center}
+.ol-row input{flex:1;min-width:0;padding:9px 11px;border:1px solid #6d6553;background:#08100d;color:#f5efe0;font:700 17px Rajdhani,Arial,sans-serif;border-radius:4px}
+.ol-row input:focus{outline:2px solid #d9a23a;outline-offset:1px}
+#ol-add{text-transform:uppercase;letter-spacing:2px}
+.ol-code{font:700 26px/1 Rajdhani,Arial,sans-serif;letter-spacing:3px;color:#ffe08a}
+.ol-btn{padding:8px 14px;border:1px solid #8a7a55;background:#17241e;color:#efe6d2;font:700 15px Rajdhani,Arial,sans-serif;border-radius:4px;cursor:pointer;white-space:nowrap}
+.ol-btn:hover:not(:disabled),.ol-btn:focus-visible{border-color:#f3d48a;background:#23362c}
+.ol-btn:disabled{opacity:.5;cursor:default}
+.ol-primary{background:#d9a23a;border-color:#f3d48a;color:#1a140a}
+.ol-primary:hover:not(:disabled){background:#f0bb52}
+.ol-status{margin:10px 0 0!important;font-size:15px!important;color:#9fe0b8}
+.ol-status.error{color:#ff9d8a}
+.ol-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ol-list li{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#08100dcc;border:1px solid #2c3a33}
+.ol-who{flex:1;min-width:0;font-weight:700;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ol-who small{display:block;font-weight:500;font-size:13px;color:#a9a392}
+.ol-actions{display:flex;gap:6px;flex:none}
+.ol-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#6b6b6b;margin-right:5px;vertical-align:1px}
+.ol-list li.online .ol-dot{background:#58e08a;box-shadow:0 0 6px #58e08a}
+.ol-remove{padding:8px 10px}
+.ol-empty{color:#a9a392}
+@media(max-width:620px){.ol-me{grid-template-columns:1fr}.ol-signout{grid-column:1}.ol-actions .ol-btn{padding:7px 9px;font-size:14px}}

@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
-const EXTRA = ['ghosts.js', 'dedemit.css', 'assets/menu/home-dedemit.webp', 'assets/fonts/im-fell-english-latin-400-normal.woff2', 'assets/fonts/im-fell-english-latin-400-italic.woff2', 'assets/audio/music/malam-dedemit.mp3', 'pwa.js', 'manifest.webmanifest', 'favicon.ico', 'assets/brand/favicon-64.png', 'assets/brand/icon-192.png', 'assets/brand/icon-512.png', 'assets/brand/icon-maskable-192.png', 'assets/brand/icon-maskable-512.png', 'assets/brand/apple-touch-icon.png'];
+const EXTRA = ['ghosts.js', 'dedemit.css', 'online.js', 'assets/menu/home-dedemit.webp', 'assets/fonts/im-fell-english-latin-400-normal.woff2', 'assets/fonts/im-fell-english-latin-400-italic.woff2', 'assets/audio/music/malam-dedemit.mp3', 'pwa.js', 'manifest.webmanifest', 'favicon.ico', 'assets/brand/favicon-64.png', 'assets/brand/icon-192.png', 'assets/brand/icon-512.png', 'assets/brand/icon-maskable-192.png', 'assets/brand/icon-maskable-512.png', 'assets/brand/apple-touch-icon.png'];
 // Files the game no longer loads (old Aether Clash home video, poster and music).
 const DROP = ['assets/menu/home-factions-loop.mp4', 'assets/menu/home-factions.webp', 'assets/audio/music/midday-showdown.mp3'];
 const sandbox = { self: {} };

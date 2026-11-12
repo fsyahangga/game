@@ -1,0 +1,62 @@
+rules_version = '2';
+// PERANG DEDEMIT: Firestore security rules for accounts and friends (online.js).
+// Paste this whole file into Firebase console > Firestore Database > Rules, then press Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function text(v, max) { return v is string && v.size() <= max; }
+    function docPath(p) { return path('/databases/' + database + '/documents/' + p); }
+    function profileOk(d) {
+      return d.keys().hasOnly(['uid', 'name', 'photo', 'code', 'createdAt', 'lastSeen'])
+        && d.uid == me() && text(d.name, 24) && d.name.size() > 0 && text(d.photo, 500) && text(d.code, 8);
+    }
+    function friendOk(d) {
+      return d.keys().hasOnly(['uid', 'name', 'photo', 'code', 'since'])
+        && text(d.name, 24) && text(d.photo, 500) && text(d.code, 8);
+    }
+
+    // Profiles: anyone signed in can see a name, photo and friend code; only the owner writes, and the code never changes.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && uid == me() && profileOk(request.resource.data)
+        && getAfter(docPath('codes/' + request.resource.data.code)).data.uid == me();
+      allow update: if signedIn() && uid == me() && profileOk(request.resource.data)
+        && request.resource.data.code == resource.data.code && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+
+      // Friends: written on both sides when a request is accepted, and only while that request exists.
+      match /friends/{fid} {
+        allow read: if signedIn() && uid == me();
+        allow create: if signedIn() && friendOk(request.resource.data) && (
+          (uid == me() && request.resource.data.uid == fid && exists(docPath('friendRequests/' + fid + '_' + me())))
+          || (fid == me() && request.resource.data.uid == me() && exists(docPath('friendRequests/' + uid + '_' + me())))
+        );
+        allow update: if false;
+        allow delete: if signedIn() && (uid == me() || fid == me());
+      }
+    }
+
+    // Friend codes: unique, claimed once by their owner, never moved.
+    match /codes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && code.matches('DMT-[A-Z0-9]{4}')
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == me();
+      allow update, delete: if false;
+    }
+
+    // Friend requests: id is "<from>_<to>"; only the two players involved can see or remove one.
+    match /friendRequests/{id} {
+      allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'fromName', 'fromPhoto', 'fromCode', 'toName', 'toPhoto', 'toCode', 'createdAt'])
+        && request.resource.data.from == me() && request.resource.data.to != me()
+        && id == me() + '_' + request.resource.data.to
+        && text(request.resource.data.fromName, 24) && text(request.resource.data.fromPhoto, 500) && text(request.resource.data.fromCode, 8)
+        && text(request.resource.data.toName, 24) && text(request.resource.data.toPhoto, 500) && text(request.resource.data.toCode, 8)
+        && exists(docPath('users/' + request.resource.data.to));
+      allow update: if false;
+      allow delete: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+    }
+  }
+}
