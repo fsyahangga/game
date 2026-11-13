@@ -14,6 +14,8 @@ const old = sandbox.self.AETHER_PRECACHE;
 const paths = old.files.map(f => f[0]).filter(p => !DROP.includes(p));
 // Super ultimate art built by guide/tools/build_super_assets.py (the .png sources are not shipped).
 if (existsSync('assets/ghosts/super')) for (const f of readdirSync('assets/ghosts/super').sort()) if (/\.(webp|js)$/.test(f)) EXTRA.push('assets/ghosts/super/' + f);
+// Combo art built by guide/tools/build_combo_assets.py.
+if (existsSync('assets/ghosts/combo')) for (const f of readdirSync('assets/ghosts/combo').sort()) if (/\.(webp|js)$/.test(f)) EXTRA.push('assets/ghosts/combo/' + f);
 for (const p of EXTRA) if (!paths.includes(p)) paths.splice(Math.max(0, paths.indexOf('game.js')), 0, p);
 
 const hash = buf => createHash('sha1').update(buf).digest('hex').slice(0, 12);

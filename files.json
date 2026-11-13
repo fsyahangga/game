@@ -1,10 +1,10 @@
 {
-  "files": 327,
-  "bytes": 43700482,
+  "files": 364,
+  "bytes": 46919411,
   "list": [
     {
       "file": "index.html",
-      "bytes": 19480
+      "bytes": 19550
     },
     {
       "file": "mobile.html",
@@ -235,8 +235,156 @@
       "bytes": 20946
     },
     {
+      "file": "assets/ghosts/combo/beguganjang-after.webp",
+      "bytes": 50022
+    },
+    {
+      "file": "assets/ghosts/combo/beguganjang-burst.webp",
+      "bytes": 80926
+    },
+    {
+      "file": "assets/ghosts/combo/beguganjang-cutin.webp",
+      "bytes": 112370
+    },
+    {
+      "file": "assets/ghosts/combo/eyangsukmocapo-after.webp",
+      "bytes": 59198
+    },
+    {
+      "file": "assets/ghosts/combo/eyangsukmocapo-burst.webp",
+      "bytes": 109268
+    },
+    {
+      "file": "assets/ghosts/combo/eyangsukmocapo-cutin.webp",
+      "bytes": 120640
+    },
+    {
+      "file": "assets/ghosts/combo/genderuwo-after.webp",
+      "bytes": 66250
+    },
+    {
+      "file": "assets/ghosts/combo/genderuwo-burst.webp",
+      "bytes": 106136
+    },
+    {
+      "file": "assets/ghosts/combo/genderuwo-cutin.webp",
+      "bytes": 128510
+    },
+    {
+      "file": "assets/ghosts/combo/jenglot-after.webp",
+      "bytes": 49616
+    },
+    {
+      "file": "assets/ghosts/combo/jenglot-burst.webp",
+      "bytes": 105072
+    },
+    {
+      "file": "assets/ghosts/combo/jenglot-cutin.webp",
+      "bytes": 123178
+    },
+    {
+      "file": "assets/ghosts/combo/kuntilanak-after.webp",
+      "bytes": 52660
+    },
+    {
+      "file": "assets/ghosts/combo/kuntilanak-burst.webp",
+      "bytes": 88656
+    },
+    {
+      "file": "assets/ghosts/combo/kuntilanak-cutin.webp",
+      "bytes": 106166
+    },
+    {
+      "file": "assets/ghosts/combo/kuyang-after.webp",
+      "bytes": 54808
+    },
+    {
+      "file": "assets/ghosts/combo/kuyang-burst.webp",
+      "bytes": 102150
+    },
+    {
+      "file": "assets/ghosts/combo/kuyang-cutin.webp",
+      "bytes": 118364
+    },
+    {
+      "file": "assets/ghosts/combo/leyak-after.webp",
+      "bytes": 53374
+    },
+    {
+      "file": "assets/ghosts/combo/leyak-burst.webp",
+      "bytes": 108624
+    },
+    {
+      "file": "assets/ghosts/combo/leyak-cutin.webp",
+      "bytes": 132894
+    },
+    {
+      "file": "assets/ghosts/combo/manifest.js",
+      "bytes": 4897
+    },
+    {
+      "file": "assets/ghosts/combo/palasik-after.webp",
+      "bytes": 46466
+    },
+    {
+      "file": "assets/ghosts/combo/palasik-burst.webp",
+      "bytes": 83442
+    },
+    {
+      "file": "assets/ghosts/combo/palasik-cutin.webp",
+      "bytes": 105966
+    },
+    {
+      "file": "assets/ghosts/combo/pocong-after.webp",
+      "bytes": 41364
+    },
+    {
+      "file": "assets/ghosts/combo/pocong-burst.webp",
+      "bytes": 109550
+    },
+    {
+      "file": "assets/ghosts/combo/pocong-cutin.webp",
+      "bytes": 89276
+    },
+    {
+      "file": "assets/ghosts/combo/sundelbolong-after.webp",
+      "bytes": 50266
+    },
+    {
+      "file": "assets/ghosts/combo/sundelbolong-burst.webp",
+      "bytes": 85950
+    },
+    {
+      "file": "assets/ghosts/combo/sundelbolong-cutin.webp",
+      "bytes": 128630
+    },
+    {
+      "file": "assets/ghosts/combo/tuyul-after.webp",
+      "bytes": 56606
+    },
+    {
+      "file": "assets/ghosts/combo/tuyul-burst.webp",
+      "bytes": 88444
+    },
+    {
+      "file": "assets/ghosts/combo/tuyul-cutin.webp",
+      "bytes": 88636
+    },
+    {
+      "file": "assets/ghosts/combo/wewegombel-after.webp",
+      "bytes": 47484
+    },
+    {
+      "file": "assets/ghosts/combo/wewegombel-burst.webp",
+      "bytes": 112636
+    },
+    {
+      "file": "assets/ghosts/combo/wewegombel-cutin.webp",
+      "bytes": 142526
+    },
+    {
       "file": "game.js",
-      "bytes": 201862
+      "bytes": 207269
     },
     {
       "file": "menu.js",
@@ -1304,7 +1452,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 18568
+      "bytes": 20999
     },
     {
       "file": "sw.js",
