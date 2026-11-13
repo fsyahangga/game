@@ -246,3 +246,7 @@ body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 .kitab-combo dt i{font-style:normal;color:#8a6d3a}
 .kitab-combo dd b{color:#7a4d06}
 @media(max-width:620px){.kitab-combo .kitab-jurus>div{grid-template-columns:1fr}}
+
+/* Controller connected / disconnected notice (gamepad.js). */
+.pad-toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:60;padding:8px 16px;background:#0d1714f2;border:1px solid #f3d48a;color:#efe6d2;font:700 15px Rajdhani,Arial,sans-serif;border-radius:999px;box-shadow:0 8px 24px #000a;transition:transform .25s ease;pointer-events:none}
+.pad-toast.show{transform:translate(-50%,0)}

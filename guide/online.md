@@ -58,4 +58,6 @@ Menu **Dua pemain** (hanya di keyboard): P2 menggantikan CPU dan memakai jalur j
 | P1 | W A S D | Spasi atau F | I atau G | O atau H | P atau T | U atau Y |
 | P2 | panah | `/` atau Numpad 0 | `.` atau Numpad 1 | `,` atau Numpad 2 | M atau Numpad 3 | N atau Numpad 4 |
 
+**Stik (gamepad):** stik Bluetooth/USB yang dibaca browser sebagai gamepad standar (Xbox, PlayStation, stik generik) langsung bisa dipakai lewat [gamepad.js](../gamepad.js). Dua stik: stik 1 = P1, stik 2 = P2. Satu stik: stik = P2, P1 pakai keyboard atau tombol sentuh. Di mode lain dan tarung online stik mengendalikan P1. Tombol: D-pad/analog kiri gerak (atas lompat, bawah jongkok), A/Cross serang, X/Square jurus 1, Y/Triangle jurus 2, B/Circle lompat, RB/LB ultimate, RT/LT super, Start jeda. Di menu: D-pad pilih, A konfirmasi, B kembali. Di HP, menu Dua pemain muncul kalau ada stik terhubung.
+
 P2 punya energi sukma dan super sendiri (bar di bawah HP kanan). Di mode ini kedua pemain sama-sama kaku 0,5 detik setelah terkena pukulan.

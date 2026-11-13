@@ -1,10 +1,10 @@
 {
-  "files": 364,
-  "bytes": 46919411,
+  "files": 365,
+  "bytes": 46927652,
   "list": [
     {
       "file": "index.html",
-      "bytes": 19550
+      "bytes": 19865
     },
     {
       "file": "mobile.html",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 23589
+      "bytes": 24002
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -383,12 +383,16 @@
       "bytes": 142526
     },
     {
+      "file": "gamepad.js",
+      "bytes": 6914
+    },
+    {
       "file": "game.js",
-      "bytes": 207269
+      "bytes": 207327
     },
     {
       "file": "menu.js",
-      "bytes": 44887
+      "bytes": 45393
     },
     {
       "file": "match.js",
@@ -1452,7 +1456,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 20999
+      "bytes": 21034
     },
     {
       "file": "sw.js",
