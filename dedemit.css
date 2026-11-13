@@ -240,3 +240,9 @@ body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 .skill-card.super .skill-name{margin-top:9px}
 @keyframes super-tag{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.skill-card.super::before{animation:none}}
+
+/* Kitab Dedemit: the combo page at the top. */
+.kitab-combo .kitab-jurus>div{grid-template-columns:minmax(260px,auto) 1fr}
+.kitab-combo dt i{font-style:normal;color:#8a6d3a}
+.kitab-combo dd b{color:#7a4d06}
+@media(max-width:620px){.kitab-combo .kitab-jurus>div{grid-template-columns:1fr}}

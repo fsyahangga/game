@@ -30,6 +30,19 @@ Urutan tabel sama dengan urutan grid pilih karakter dan Kitab Dedemit.
 
 Angka umum: basic 6/8/12, Skill 1 16 dmg CD 3 s, Skill 2 24 dmg CD 6 s; ultimate sesuai `<slot>-reference.md`.
 
+## Kombo jurus
+
+Pertarungan dasar tidak berubah. Di atasnya, empat rute kombo berlaku untuk semua dedemit dan kedua petarung (pemain, CPU, P2, online): kalau serangan pertama **kena** lalu jurus berikutnya dimulai dalam jeda waktunya, damage jurus itu dikali selama sebentar.
+
+| Rute | Urutan | Bonus | Jeda | Bonus berlaku |
+| --- | --- | --- | --- | --- |
+| Rantai Jurus | pukulan ke-3 kena → jurus 1 (I) | ×1,5 | 0,8 s | 1,4 s |
+| Gempur Jurus | pukulan ke-2 atau ke-3 kena → jurus 2 (O) | ×1,6 | 0,8 s | 1,4 s |
+| Sambung Jurus | jurus 1 kena → jurus 2 (O) | ×1,7 | 1 s | 1,4 s |
+| Pamungkas | jurus 2 kena → ultimate (P) | ×1,3 | 1,2 s | 4 s (seluruh ultimate) |
+
+Saat kombo jalan muncul tulisan dengan nama jurus dedemitnya ("KOMBO! SUNDULAN KAFAN → TALI POCONG ×1,5") dan angka damage berwarna emas. Super ultimate tidak ikut dikali. Angkanya di `COMBO_ROUTES` di game.js; daftar ini juga tampil di halaman pertama Kitab Dedemit. Prompt gambar untuk animasi kombo (cut-in per dedemit dan efek hantaman) ada di [combo-prompts.md](combo-prompts.md).
+
 ## Energi Sukma dan Super Ultimate (U)
 
 Setiap serangan pemain yang kena mengisi bar energi sukma di bawah HP (di kode: `mana`): `6 + damage × 1,5 + panjang kombo (maks. 8) × 1,5`, dan saat terkena pukulan bertambah 1,2 × damage yang diterima. Bar biasanya penuh setelah 8–10 pukulan kena, jauh sebelum HP lawan habis. Saat energi sukma 200, tombol **Super Ultimate** muncul di deretan jurus (tombol U, atau tombol SUPER di layar sentuh). Super membekukan arena dengan cut-in, lalu lima hantaman pilar warna dedemit (10/10/10/12/26 = 68 damage, hantaman terakhir menjatuhkan lawan). Hantamannya menembus kebal, jatuh, dan tangkisan; pemain kebal selama super. Angkanya di `BALANCE.mana` dan `BALANCE.superUlt` di game.js; energi sukma terbawa ke ronde berikutnya dan baru kosong saat pertandingan baru. CPU belum punya energi sukma. Super tiap dedemit juga tampil di Kitab Dedemit.

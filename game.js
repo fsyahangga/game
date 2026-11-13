@@ -38,6 +38,16 @@
   const keys = new Set(), taps = { a: -10, d: -10, s: -10 };
   const particles = [], effects = [], projectiles = [], damageNumbers = [];
   let superUlt = null, manaReadyPulse = 0;
+  // Skill combos (all dedemit, both fighters): a move that lands opens a short window; starting the next move of the route
+  // inside it boosts that move's damage for a moment. The fights themselves are unchanged; only the follow-up hits harder.
+  const COMBO_ROUTES = [
+    { id: 'rantai', label: 'RANTAI JURUS', from: ['attack3'], to: 'skill1', within: .8, mult: 1.5, last: 1.4 },
+    { id: 'gempur', label: 'GEMPUR JURUS', from: ['attack2', 'attack3'], to: 'skill2', within: .8, mult: 1.6, last: 1.4 },
+    { id: 'sambung', label: 'SAMBUNG JURUS', from: ['skill1'], to: 'skill2', within: 1, mult: 1.7, last: 1.4 },
+    { id: 'pamungkas', label: 'PAMUNGKAS', from: ['skill2'], to: 'ultimate', within: 1.2, mult: 1.3, last: 4 }
+  ];
+  const comboFresh = () => ({ cast: null, castAt: -9, landed: null, landedAt: -9, boost: null, count: 0 });
+  let comboTrack = { player: comboFresh(), enemy: comboFresh() };
   // Local two-player versus (menu 'Dua pemain'): the second fighter (the engine's 'dummy') follows P2's keys instead
   // of the CPU brain, through the same move code the CPU uses (cpuStart). See p2Press / p2Control.
   let localP2 = false, p2run = 0;
@@ -276,6 +286,7 @@
     const basic = hero.action?.type === 'attack' ? hero.action : null;
     if (basic && canAct() && (hero.cooldowns[name] || 0) <= 0) hero.action = null;
     const ok = castMove(name);
+    if (ok) comboStart(hero, name);
     if (!ok && basic && !hero.action) { hero.action = basic; state(basic.name); }
     return ok;
   }
@@ -331,7 +342,7 @@
     if(F) {F.reset(hero);F.reset(dummy);Object.assign(dummy,{facing:-1,action:null,cooldowns:{skill1:0,skill2:0,ultimate:0},aiThink:.4,aiTime:0,aiChain:0,walkPhase:0,jumps:0});cpu={seen:new WeakMap(),decided:new WeakSet(),read:null,heroActionAt:0,heroAction:null,airborne:false,airAt:0,antiAirRead:false,plan:null,doubleAt:0};syncPlayerForm();}
     fenrCutin=null;hudIdentity='';
     particles.length = effects.length = projectiles.length = damageNumbers.length = 0; totalDamage = comboHits = bestCombo = comboDamage = comboTimer = hitstop = trauma = cinematic = 0; clearInput(); setPaused(false); announce('LATIHAN DIMULAI', 1.25);
-    superUlt = null; manaReadyPulse = 0; squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null;
+    superUlt = null; manaReadyPulse = 0; comboTrack = { player: comboFresh(), enemy: comboFresh() }; squad = null; enemySquad = null; parade = null; enemyParade = null; flock = null; enemyFlock = null; serpent = null; enemySerpent = null; quake = null; enemyQuake = null; finale = null; enemyFinale = null; skyfall = null; enemySkyfall = null; orrery = null; enemyOrrery = null; sunroar = null; enemySunroar = null; delivery = null; enemyDelivery = null; tortoise = null; enemyTortoise = null;
     for(const name of Object.keys(rechargePulse)) rechargePulse[name]=0;
   }
   function reset() {
@@ -344,6 +355,7 @@
     if (!force && (dummy.invuln > 0 || dummy.state === 'down' || dummy.state === 'recover')) return false;
     if (!force && dummy.action?.guard && shellGuard(dummy)) return false;
     const dir = sourceX <= dummy.x ? 1 : -1;
+    if (!force) { const m = comboMult(hero); if (m > 1) { damage = Math.round(damage * m); color = '#ffd76a'; } comboLanded(hero); }
     dummy.damage += damage; totalDamage += damage; comboHits++; bestCombo = Math.max(bestCombo, comboHits); comboDamage += damage; comboTimer = 2.3;
     // Versus combo limit: after comboCap hits in one continuous stun the CPU gets its immunity (like the player's),
     // so a re-started chain cannot loop it to K.O. Easy has no limit.
@@ -361,6 +373,28 @@
     if (dummy.damage >= BALANCE.dummyMax || knockdown) { dummy.ko=dummy.damage>=BALANCE.dummyMax; dummy.state = 'down'; dummy.vy = -330; dummy.vx = dir * 290; dummy.fallDirection = dir; announce(dummy.ko?'K.O.':'KNOCKDOWN', .9); }
     if (!force) { gainMana(damage); if (localP2) addMana(dummy, damage * BALANCE.mana.perTaken); }
     sound(damage >= 30 ? 'heavy' : 'hit'); return true;
+  }
+  const comboSide = actor => actor === dummy ? 'enemy' : 'player';
+  function comboMult(actor) { const b = comboTrack[comboSide(actor)].boost; return b && time <= b.until ? b.mult : 1; }
+  function comboStart(actor, type) {
+    if (type === 'attack') return;
+    const tr = comboTrack[comboSide(actor)];
+    const r = COMBO_ROUTES.find(r => r.to === type && r.from.includes(tr.landed) && time - tr.landedAt <= r.within);
+    tr.cast = type; tr.castAt = time;
+    if (!r) return;
+    tr.boost = { id: r.id, mult: r.mult, until: time + r.last }; tr.count++;
+    const id = actor === dummy ? opponentCharacter : selectedCharacter, names = fighterInfo(id, actor.form).names || [];
+    const slot = k => k.startsWith('attack') ? 0 : k === 'skill1' ? 1 : k === 'skill2' ? 2 : 3;
+    const who = localP2 ? (actor === dummy ? 'P2 ' : 'P1 ') : actor === dummy && aiEnabled ? 'LAWAN ' : '';
+    announce(`${who}KOMBO! ${names[slot(tr.landed)] || ''} → ${names[slot(type)] || ''} ×${String(r.mult).replace('.', ',')}`, 1.5);
+    effects.push({ type: 'ultimate-ring', x: actor.x, y: actor.y - 80, life: .5, maxLife: .5 });
+    spawnParticles(actor.x, actor.y - 90, '#ffd76a', 16, 240); sound('cast');
+  }
+  function comboLanded(actor) {
+    const tr = comboTrack[comboSide(actor)], a = actor.action;
+    const kind = a?.type === 'attack' ? 'attack' + (a.index || parseInt(String(a.name).slice(-1)) || 1)
+      : a && a.type !== 'super' ? a.type : time - tr.castAt <= 1.3 ? tr.cast : null;
+    if (kind) { tr.landed = kind; tr.landedAt = time; }
   }
   function gainMana(damage) { addMana(hero, BALANCE.mana.perHit + damage * BALANCE.mana.perDamage + Math.min(comboHits, BALANCE.mana.comboCap) * BALANCE.mana.perCombo); }
   // Energi sukma for either fighter (the second one only fills in local two-player).
@@ -486,7 +520,7 @@
   function netExport() {
     const groups = { squad, enemySquad, parade, enemyParade, flock, enemyFlock, serpent, enemySerpent, quake, enemyQuake, finale, enemyFinale, skyfall, enemySkyfall, orrery, enemyOrrery, sunroar, enemySunroar, delivery, enemyDelivery, tortoise, enemyTortoise };
     return JSON.stringify({ t: 's', v: { time, realTime, hitstop, trauma, cinematic, announceTimer, seed, stepCount, totalDamage, comboHits, bestCombo, comboDamage, comboTimer, manaReadyPulse, p2run },
-      hero, dummy, match, fenrCutin, superUlt, rechargePulse, groups, projectiles, effects, damageNumbers, keys: [...keys], p2keys: [...p2keys], ann: $('#announcement').textContent,
+      hero, dummy, match, fenrCutin, superUlt, rechargePulse, comboTrack, groups, projectiles, effects, damageNumbers, keys: [...keys], p2keys: [...p2keys], ann: $('#announcement').textContent,
       spirits: { t: tortoise ? effects.indexOf(tortoise.spirit) : -1, e: enemyTortoise ? effects.indexOf(enemyTortoise.spirit) : -1 } },
       (k, v) => (v instanceof HTMLImageElement || (k === 'assets' && v && typeof v === 'object')) ? undefined : v);
   }
@@ -496,7 +530,7 @@
     netLastSeq = st.v.stepCount;
     ({ time, realTime, hitstop, trauma, cinematic, announceTimer, seed, stepCount, totalDamage, comboHits, bestCombo, comboDamage, comboTimer, manaReadyPulse, p2run } = st.v);
     const form = hero.form; netReplace(hero, st.hero); netReplace(dummy, st.dummy); if (hero.form !== form) syncPlayerForm();
-    match = st.match; fenrCutin = st.fenrCutin; Object.assign(rechargePulse, st.rechargePulse);
+    match = st.match; fenrCutin = st.fenrCutin; if (st.comboTrack) comboTrack = st.comboTrack; Object.assign(rechargePulse, st.rechargePulse);
     superUlt = st.superUlt;
     if (superUlt) {
       superUlt.assets = superAssets(superUlt.id);
@@ -1446,7 +1480,7 @@
   function cpuJump(double) { dummy.vy = -CONFIG.jumpSpeed; dummy.y -= 1; dummy.jumps = 1; dummy.vx = 0; dummy.state = 'jump'; dummy.stateTime = 0; cpu.doubleAt = double ? time + .16 : 0; }
   function cpuStart(name, index = 1) {
     if (!startEnemyAction(name, index)) return false;
-    dummy.vx = 0; cpu.plan = null;
+    dummy.vx = 0; cpu.plan = null; comboStart(dummy, name);
     if (name === 'ultimate' && opponentCharacter === 'fenr') showFenrTransformation(dummy);
     return true;
   }
@@ -2012,7 +2046,7 @@
   function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; if (netRole === 'host' && netSend && !menuOpen && stamp - netLastSent >= 33) { netLastSent = stamp; netSend(netExport(), false); } draw(); requestAnimationFrame(tick); }
   // Deterministic QA interface: set manual=true, reset(), press/release(), advance(seconds).
   // Positions represent feet. No networking or persistent state is changed by this interface.
-  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, netStart, netMessage, netPeerLost, netStop, netExport, netImport, me: meActor, netRole: () => netRole, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name, owner: superUlt.owner } : null, p2: (key, down) => down ? p2Press(key) : p2keys.delete(key), clearInput, draw, manual: false,
+  window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, combos: () => JSON.parse(JSON.stringify(comboTrack)), comboRoutes: COMBO_ROUTES, netStart, netMessage, netPeerLost, netStop, netExport, netImport, me: meActor, netRole: () => netRole, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name, owner: superUlt.owner } : null, p2: (key, down) => down ? p2Press(key) : p2keys.delete(key), clearInput, draw, manual: false,
     advance(seconds) { for (let i = 0; i < Math.round(seconds * 120); i++) step(1 / 120); draw(); return this.snapshot(); },
     snapshot() { return { ready, paused, settingsOpen, menuOpen, selectedCharacter, opponentCharacter, difficulty, stageId, match:match?{...match}:null,roundCues:[...roundCues],aiEnabled, time, stepCount, hero: JSON.parse(JSON.stringify(hero)), dummy: { ...dummy }, healthBars:{hero:hpLayers(hero.hp),dummy:hpLayers(currentDummyHP())}, squad: squad ? JSON.parse(JSON.stringify(squad)) : null, enemySquad:enemySquad?JSON.parse(JSON.stringify(enemySquad)):null, parade: parade ? JSON.parse(JSON.stringify(parade)) : null, enemyParade: enemyParade ? JSON.parse(JSON.stringify(enemyParade)) : null, flock: flock ? JSON.parse(JSON.stringify(flock)) : null, enemyFlock: enemyFlock ? JSON.parse(JSON.stringify(enemyFlock)) : null, serpent: serpent ? JSON.parse(JSON.stringify(serpent)) : null, enemySerpent: enemySerpent ? JSON.parse(JSON.stringify(enemySerpent)) : null, quake: quake ? JSON.parse(JSON.stringify(quake)) : null, enemyQuake: enemyQuake ? JSON.parse(JSON.stringify(enemyQuake)) : null, finale: finale ? { ...finale } : null, enemyFinale: enemyFinale ? { ...enemyFinale } : null, skyfall: skyfall ? { ...skyfall } : null, enemySkyfall: enemySkyfall ? { ...enemySkyfall } : null, orrery: orrery ? { ...orrery } : null, enemyOrrery: enemyOrrery ? { ...enemyOrrery } : null, sunroar: sunroar ? { ...sunroar } : null, enemySunroar: enemySunroar ? { ...enemySunroar } : null, delivery: delivery ? { ...delivery } : null, enemyDelivery: enemyDelivery ? { ...enemyDelivery } : null, tortoise: tortoise ? { ...tortoise, spirit: undefined } : null, enemyTortoise: enemyTortoise ? { ...enemyTortoise, spirit: undefined } : null, playable: playable(), cutinVisible: !!squad && squad.t < SQUAD.cutinDuration, totalDamage, comboHits, comboDamage, hitstop, cinematic, trauma, projectileCount: projectiles.length, audioState: audio?.state || 'uninitialized', audioSources, stageLoaded: !!images.stage, spriteLoaded: !!images.hero, manifestLoaded: !!manifest }; },
     startMatch,setMenuOpen,menuSound,openSettings,toggleFullscreen,music(){return music?{on:musicOn,volume:musicVolume,playing:!music.paused,src:MUSIC_PATH,element:music}:null;},onRoundCue(fn){roundAnnouncer=typeof fn==='function'?fn:null;},
@@ -2020,7 +2054,7 @@
     stopAnnouncer(){systemAnnouncer?.clear();},announcerState(){return systemAnnouncer?.snapshot()||null;},
     selectCharacter, setAI(value){aiEnabled=!!value;dummy.action=null;dummy.vx=0;dummy.state='idle';}, opponentPose,
     setPaused, setHitboxes(v) { hitboxes = !!v; $('#hitbox-toggle').checked = hitboxes; },
-    receiveHit(damage = 12,options={}) { const force = !!options.force; if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || (!force && hero.invuln > 0)) return false; if (!force && hero.action?.guard && shellGuard(hero)) return false; if (!force && (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate' || hero.action?.type === 'super' || superUlt)) return false; const taken = Math.min(hero.hp, damage); hero.hp = Math.max(0, hero.hp - damage); if (!force) { addMana(hero, taken * BALANCE.mana.perTaken); if (localP2) addMana(dummy, BALANCE.mana.perHit + damage * BALANCE.mana.perDamage); } hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?(options.knock?.8:localP2?.5:.42):0; hero.vx = (options.knock ? (hero.x < dummy.x ? -1 : 1) * 320 : hero.facing * -170); state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
+    receiveHit(damage = 12,options={}) { const force = !!options.force; if (menuOpen || (match&&match.phase!=='fight') || hero.hp<=0 || (!force && hero.invuln > 0)) return false; if (!force && hero.action?.guard && shellGuard(hero)) return false; if (!force && (hero.action?.type?.startsWith('skill') || hero.action?.type === 'ultimate' || hero.action?.type === 'super' || superUlt)) return false; if (!force) { const m = comboMult(dummy); if (m > 1) damage = Math.round(damage * m); comboLanded(dummy); } const taken = Math.min(hero.hp, damage); hero.hp = Math.max(0, hero.hp - damage); if (!force) { addMana(hero, taken * BALANCE.mana.perTaken); if (localP2) addMana(dummy, BALANCE.mana.perHit + damage * BALANCE.mana.perDamage); } hero.action = null; hero.rollBuffer = null; hero.doublePose = 0; hero.hurtTime = hero.hp>0?(options.knock?.8:localP2?.5:.42):0; hero.vx = (options.knock ? (hero.x < dummy.x ? -1 : 1) * 320 : hero.facing * -170); state(hero.hp>0?'hurt':'down'); spawnParticles(hero.x, hero.y - 75, '#ffc694', 14, 200); if(options.freeze!==false)hitstop = .05; trauma = Math.min(1, trauma + .2 * (options.shake ?? 1)); if (!hero.hp) {hero.koTime=1.7;clearInput();if(match?.mode!=='versus')announce('BANGKIT LAGI',1.7);} return true; }
   };
   if(F)reset();
   if(window.FRONTEND_ENABLED)setMenuOpen(true);
