@@ -267,3 +267,7 @@ body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 @media(max-height:420px){.home-title>.aksara-title{font-size:12px;line-height:1.5}.home-title>.aksara-title:before{width:30px;height:5px;background-size:7px 5px}.dedemit-title h1{margin-bottom:2px}.home-nav button.nav-tertiary{padding:2px}.home-nav button.nav-tertiary>span{font-size:13px}}
 /* Tombstone instead of an arrow on menu buttons; it takes the button's text colour. */
 b.grave{display:inline-grid;place-items:center;line-height:0}b.grave svg{width:23px;height:25px;fill:currentColor}.menu-primary b.grave svg{width:24px;height:26px}
+/* Character select: a pendopo courtyard with a moonlit altar on the left for the player and an ember-lit altar on the right for the opponent. A soft shade over the middle keeps the roster grid readable. */
+.selection-backdrop{background:radial-gradient(ellipse 22% 55% at 50% 52%,#0b1511b3,transparent 100%),linear-gradient(180deg,#0b1511 0,#0b151100 14%,#0b151100 90%,#0b1511d9 100%),url('assets/menu/select-dedemit.webp') center bottom/cover no-repeat,#0e1a16}
+.selection-backdrop:after{display:none}
+.fighter-copy>span,.fighter-copy p,.fighter-copy small{text-shadow:0 1px 2px #050b08,0 0 8px #050b08,0 0 16px #0b1511}.fighter-copy h2{text-shadow:0 3px 0 #050b08,0 0 22px #050b08}

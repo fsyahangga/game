@@ -1,6 +1,6 @@
 {
-  "files": 366,
-  "bytes": 46848789,
+  "files": 367,
+  "bytes": 46998366,
   "list": [
     {
       "file": "index.html",
@@ -28,11 +28,11 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 27435
+      "bytes": 28120
     },
     {
       "file": "assets/menu/home-dedemit.webp",
-      "bytes": 271598
+      "bytes": 223288
     },
     {
       "file": "assets/fonts/im-fell-english-latin-400-normal.woff2",
@@ -389,6 +389,10 @@
     {
       "file": "assets/fonts/noto-sans-javanese-subset.woff2",
       "bytes": 4924
+    },
+    {
+      "file": "assets/menu/select-dedemit.webp",
+      "bytes": 197144
     },
     {
       "file": "game.js",
@@ -1460,7 +1464,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 21103
+      "bytes": 21161
     },
     {
       "file": "sw.js",
