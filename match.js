@@ -6,10 +6,10 @@
     // mistakes = odds of attacking into immunity or chaining blindly; wake = extra delay after being hit;
     // immunity = CPU post-hurt immunity in versus (the player always gets 0.9 s; Hard/Excellent use the same rule);
     // comboCap = hits in one continuous stun before that immunity starts early (stops re-started chain loops).
-    easy:{label:'Easy',speed:.95,recovery:.6,reaction:.34,combo:2,skillEvery:2,ultimateAfter:10,aggression:.6,evade:.25,punish:.3,antiAir:.25,ender:.15,mistakes:.22,wake:.22,immunity:.45,comboCap:6},
-    medium:{label:'Medium',speed:1.1,recovery:.38,reaction:.2,combo:3,skillEvery:1,ultimateAfter:7,aggression:.8,evade:.55,punish:.6,antiAir:.55,ender:.5,mistakes:.08,wake:.12,immunity:.9,comboCap:5},
-    hard:{label:'Hard',speed:1.22,recovery:.22,reaction:.13,combo:3,skillEvery:1,ultimateAfter:5,aggression:.9,evade:.78,punish:.82,antiAir:.78,ender:.85,mistakes:.03,wake:.06,immunity:.9,comboCap:4},
-    excellent:{label:'Excellent',speed:1.32,recovery:.12,reaction:.08,combo:3,skillEvery:1,ultimateAfter:3.5,aggression:.97,evade:.92,punish:.95,antiAir:.9,ender:1,mistakes:0,wake:.02,immunity:.9,comboCap:4}
+    easy:{label:'Mudah',speed:.95,recovery:.6,reaction:.34,combo:2,skillEvery:2,ultimateAfter:10,aggression:.6,evade:.25,punish:.3,antiAir:.25,ender:.15,mistakes:.22,wake:.22,immunity:.45,comboCap:6},
+    medium:{label:'Sedang',speed:1.1,recovery:.38,reaction:.2,combo:3,skillEvery:1,ultimateAfter:7,aggression:.8,evade:.55,punish:.6,antiAir:.55,ender:.5,mistakes:.08,wake:.12,immunity:.9,comboCap:5},
+    hard:{label:'Sulit',speed:1.22,recovery:.22,reaction:.13,combo:3,skillEvery:1,ultimateAfter:5,aggression:.9,evade:.78,punish:.82,antiAir:.78,ender:.85,mistakes:.03,wake:.06,immunity:.9,comboCap:4},
+    excellent:{label:'Sangat Sulit',speed:1.32,recovery:.12,reaction:.08,combo:3,skillEvery:1,ultimateAfter:3.5,aggression:.97,evade:.92,punish:.95,antiAir:.9,ender:1,mistakes:0,wake:.02,immunity:.9,comboCap:4}
   };
   // PERANG DEDEMIT arenas. The ids stay the engine's stage slots; the 1280x720 pictures come from assets/ghosts/arena
   // (sources) and groundY is the measured standing line on each floor band.

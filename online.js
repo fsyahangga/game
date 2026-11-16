@@ -73,7 +73,7 @@ async function run(task, notice = '') {
   catch (e) { state.busy = false; setStatus(message(e)); return false; }
 }
 
-// ---------------------------------------------------------------- profile
+// profile
 async function ensureProfile(user) {
   const ref = doc(db, 'users', user.uid), snap = await getDoc(ref);
   if (snap.exists()) { await updateDoc(ref, { lastSeen: serverTimestamp(), photo: (user.photoURL || '').slice(0, 500) }); return; }
@@ -92,7 +92,7 @@ async function ensureProfile(user) {
   throw new Error('Gagal membuat kode teman. Coba lagi.');
 }
 
-// ---------------------------------------------------------------- live data
+// live data
 function stopListening() {
   for (const u of unsubs) u(); unsubs = [];
   for (const w of friendWatch.values()) w.unsub(); friendWatch.clear();
@@ -150,7 +150,7 @@ onAuthStateChanged(auth, async user => {
 });
 getRedirectResult(auth).catch(e => setStatus(message(e)));
 
-// ---------------------------------------------------------------- actions
+// actions
 const me = () => auth.currentUser?.uid;
 const api = {
   state,
@@ -202,7 +202,7 @@ async function acceptRequest(from) {
   await b.commit();
 }
 
-// ---------------------------------------------------------------- online fight (WebRTC)
+// online fight (WebRTC)
 let rtc = null;   // { ref, role, unsub, timer, pc, rel, unrel, offered, answered, started, m }
 function setNet(patch) { Object.assign(state.net, patch); emit(); }
 function closeRtc() {
