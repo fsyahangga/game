@@ -1,6 +1,6 @@
 {
   "files": 366,
-  "bytes": 46846282,
+  "bytes": 46848789,
   "list": [
     {
       "file": "index.html",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 27183
+      "bytes": 27435
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -396,7 +396,7 @@
     },
     {
       "file": "menu.js",
-      "bytes": 45780
+      "bytes": 48035
     },
     {
       "file": "match.js",
