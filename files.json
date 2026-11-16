@@ -1,6 +1,6 @@
 {
   "files": 367,
-  "bytes": 46998366,
+  "bytes": 47000366,
   "list": [
     {
       "file": "index.html",
@@ -20,7 +20,7 @@
     },
     {
       "file": "preload.js",
-      "bytes": 4469
+      "bytes": 5863
     },
     {
       "file": "ghosts.js",
@@ -400,7 +400,7 @@
     },
     {
       "file": "menu.js",
-      "bytes": 48035
+      "bytes": 48641
     },
     {
       "file": "match.js",
