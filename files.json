@@ -1,6 +1,6 @@
 {
-  "files": 365,
-  "bytes": 46798947,
+  "files": 366,
+  "bytes": 46803940,
   "list": [
     {
       "file": "index.html",
@@ -385,6 +385,10 @@
     {
       "file": "gamepad.js",
       "bytes": 6914
+    },
+    {
+      "file": "assets/fonts/noto-sans-javanese-subset.woff2",
+      "bytes": 4924
     },
     {
       "file": "game.js",
@@ -1456,7 +1460,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 21034
+      "bytes": 21103
     },
     {
       "file": "sw.js",
