@@ -1,14 +1,14 @@
 {
   "files": 365,
-  "bytes": 46927652,
+  "bytes": 46927612,
   "list": [
     {
       "file": "index.html",
-      "bytes": 19865
+      "bytes": 19849
     },
     {
       "file": "mobile.html",
-      "bytes": 4640
+      "bytes": 4624
     },
     {
       "file": "style.css",
@@ -16,7 +16,7 @@
     },
     {
       "file": "menu.css",
-      "bytes": 28725
+      "bytes": 29018
     },
     {
       "file": "preload.js",
@@ -232,7 +232,7 @@
     },
     {
       "file": "online.js",
-      "bytes": 20946
+      "bytes": 20686
     },
     {
       "file": "assets/ghosts/combo/beguganjang-after.webp",
@@ -396,7 +396,7 @@
     },
     {
       "file": "match.js",
-      "bytes": 4394
+      "bytes": 4353
     },
     {
       "file": "announcer.js",

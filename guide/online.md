@@ -8,7 +8,7 @@ Main antar akun: login Google, profil dengan kode teman, daftar teman, dan tarun
 ## Setup sekali saja (Firebase console)
 
 1. **Authentication → Sign-in method:** Google aktif.
-2. **Authentication → Settings → Authorized domains:** `fsyahangga.web.id` dan `localhost`.
+2. **Authentication → Settings → Authorized domains:** `dedemit.web.id`, `fsyahangga.web.id` (alamat lama) dan `localhost`.
 3. **Firestore Database → Rules:** salin seluruh isi [firestore.rules](../firestore.rules), tempel, lalu klik **Publish**. Tanpa langkah ini login tetap berhasil, tapi profil dan teman gagal dengan pesan "Akses database ditolak".
 
 Kalau `firestore.rules` diubah, ulangi langkah 3.
