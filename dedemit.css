@@ -271,3 +271,27 @@ b.grave{display:inline-grid;place-items:center;line-height:0}b.grave svg{width:2
 .selection-backdrop{background:radial-gradient(ellipse 22% 55% at 50% 52%,#0b1511b3,transparent 100%),linear-gradient(180deg,#0b1511 0,#0b151100 14%,#0b151100 90%,#0b1511d9 100%),url('assets/menu/select-dedemit.webp') center bottom/cover no-repeat,#0e1a16}
 .selection-backdrop:after{display:none}
 .fighter-copy>span,.fighter-copy p,.fighter-copy small{text-shadow:0 1px 2px #050b08,0 0 8px #050b08,0 0 16px #0b1511}.fighter-copy h2{text-shadow:0 3px 0 #050b08,0 0 22px #050b08}
+/* First-fight tutorial (tutorial.js): one short card under the HUD, chips that tick as the player does each action, and
+   on the touch shell the buttons to press glow. */
+#tutorial{position:absolute;left:50%;top:calc(clamp(110px,24vh,200px) + env(safe-area-inset-top));transform:translateX(-50%);z-index:6;pointer-events:none;width:max-content;max-width:min(560px,calc(100vw - 32px));font-family:Rajdhani,Arial,sans-serif}
+#tutorial [hidden]{display:none}
+.tut-card{pointer-events:auto;display:grid;grid-template-columns:1fr auto;gap:2px 18px;align-items:center;background:#0e1a16eb;border:1px solid #d9a23a66;border-top:3px solid var(--kunyit);box-shadow:0 18px 50px #000a,inset 0 0 40px #4e7a6322;padding:10px 14px 12px 18px}
+#tutorial.tut-next .tut-card{animation:ci-in .4s cubic-bezier(.2,.9,.25,1.2) both}
+.tut-kicker{grid-column:1;margin:0;font-size:13px;letter-spacing:1px;color:#a9cdb8}
+.tut-prompt{grid-column:1;margin:0;font-family:var(--fell);font-size:clamp(24px,3.2vw,32px);line-height:1.05;color:var(--kafan)}
+.tut-chips{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.tut-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 5px;border:1px solid #6e8a7c;border-radius:999px;background:#1b2c25cc;color:#d9d3c2;font-size:16px;font-weight:600;transition:border-color .2s,color .2s,background .2s}
+.tut-chip i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid #6e8a7c;font-style:normal;font-size:13px;color:transparent;transition:background .2s,color .2s}
+.tut-chip.done{border-color:var(--kunyit);background:#3a2e14cc;color:var(--kafan)}
+.tut-chip.done i{background:var(--kunyit);border-color:var(--kunyit);color:#1a140a}
+.tut-more{padding-left:12px;border-style:dashed;font-weight:500}
+#tutorial kbd{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 6px;font:700 14px Rajdhani,Arial,sans-serif;color:var(--kafan);background:#1b2c25;border:1px solid #6e8a7c;border-bottom-width:3px;border-radius:4px}
+.tut-chip kbd+kbd{margin-left:3px}
+.tut-skip{grid-column:2;grid-row:1/3;align-self:start;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;background:none;border:1px solid #8c8a8066;border-radius:4px;color:#cfd9cf;font:600 15px Rajdhani,Arial,sans-serif;cursor:pointer}
+.tut-skip:hover,.tut-skip:focus-visible{border-color:var(--kunyit);color:var(--kafan)}
+.tut-skip kbd{min-width:0;height:20px;font-size:12px}
+html.touch .tutorial-target{outline:3px solid var(--kunyit);outline-offset:3px;animation:tut-glow 1.1s ease-in-out infinite}
+@keyframes tut-glow{0%,100%{outline-color:#d9a23a}50%{outline-color:#d9a23a33}}
+@media (prefers-reduced-motion:reduce){#tutorial.tut-next .tut-card,html.touch .tutorial-target{animation:none}}
+/* Short (phone landscape) screens: one row under the pause buttons, chips beside the prompt. */
+@media (max-height:520px){#tutorial{top:calc(120px + env(safe-area-inset-top));max-width:min(680px,calc(100vw - 32px))}.tut-card{grid-template-columns:auto auto auto;gap:0 14px;padding:6px 8px 7px 14px}.tut-prompt{font-size:21px}.tut-chips{grid-column:2;grid-row:1/3;margin:0;flex-wrap:nowrap}.tut-chip{font-size:14px;white-space:nowrap}.tut-skip{grid-column:3;align-self:center}}

@@ -31,6 +31,7 @@
   let opponentCharacter = 'fenr', difficulty = 'medium', stageId = 'bellora', menuOpen = !!window.FRONTEND_ENABLED;
   let match = Rules?.create('training') || null, roundAnnouncer = null;
   const roundCues = [];
+  let tutorialRun = false, actionListener = null;
   let ready = false, paused = false, settingsOpen = false, hitboxes = false, muted = false, volume = .45;
   let scale = 1, offsetX = 0, offsetY = 0, viewW = W, viewH = H, pixelRatio = 1;
   let time = 0, realTime = 0, lastTime = 0, accumulator = 0, hitstop = 0, trauma = 0, cinematic = 0, announceTimer = 0;
@@ -212,7 +213,7 @@
     for(const [i,n] of notes.entries()){const at=audio.currentTime+i*gap,o=audio.createOscillator(),g=audio.createGain();o.type=kind==='locked'||kind==='pick'?'triangle':'sine';o.frequency.setValueAtTime(n,at);g.gain.setValueAtTime(.001,at);g.gain.exponentialRampToValueAtTime(peak,at+.005);g.gain.exponentialRampToValueAtTime(.001,at+tail);o.connect(g);g.connect(master);o.start(at);o.stop(at+tail+.015);audioSources++;}
   }
   function setMenuOpen(value) {
-    menuOpen=!!value;clearInput();if(menuOpen){systemAnnouncer?.clear();stopUltimateVoice();comboFlash=superUlt=squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;projectiles.length=effects.length=0;setPaused(false);}
+    menuOpen=!!value;clearInput();if(menuOpen){tutorialRun=false;document.body.classList.remove('in-tutorial');systemAnnouncer?.clear();stopUltimateVoice();comboFlash=superUlt=squad=enemySquad=parade=enemyParade=flock=enemyFlock=serpent=enemySerpent=quake=enemyQuake=finale=enemyFinale=skyfall=enemySkyfall=orrery=enemyOrrery=sunroar=enemySunroar=delivery=enemyDelivery=tortoise=enemyTortoise=null;fenrCutin=null;projectiles.length=effects.length=0;setPaused(false);}
     document.body.classList.toggle('in-menu',menuOpen);$('#front-menu').hidden=!menuOpen;
     window.FrontEnd?.syncBackground();
   }
@@ -225,7 +226,8 @@
     selectedCharacter=player;opponentCharacter=enemy;stageId=stage;difficulty=level;images.stage=images['stage-'+stage];CONFIG.groundY=Rules.stages[stage].groundY;
     aiEnabled=mode==='versus';localP2=mode==='versus'&&!!options.local2p;document.body.classList.toggle('local2p',localP2);{const tag=document.querySelector('.fighter-two .player-tag');if(tag)tag.textContent=localP2?'P2':'CPU';}match=Rules.create(mode);roundCues.length=0;setMenuOpen(false);resetCombat();warmCutins();
     $('#ai-toggle').checked=aiEnabled;$('#character-select').value=selectedCharacter;document.body.classList.toggle('in-versus',mode==='versus');
-    if(mode==='versus'){announceTimer=0;emitRoundCue('round',1);}else announce('LATIHAN DIMULAI',1.3);
+    tutorialRun=mode==='training'&&!!options.tutorial;document.body.classList.toggle('in-tutorial',tutorialRun);
+    if(mode==='versus'){announceTimer=0;emitRoundCue('round',1);}else if(tutorialRun)announce('',0);else announce('LATIHAN DIMULAI',1.3);
     return true;
   }
   function emitRoundCue(cue,round) {
@@ -256,7 +258,7 @@
   function updateMatchHud() {
     if(!Rules)return;
     const versus=match?.mode==='versus',s=Rules.stages[stageId];
-    $('#mode-label').textContent=versus?`ROUND ${match.round} / 3`:'LATIHAN BEBAS';$('#match-clock').textContent=versus?String(Math.ceil(match.seconds)).padStart(2,'0'):'∞';
+    $('#mode-label').textContent=versus?`ROUND ${match.round} / 3`:tutorialRun?'TUTORIAL':'LATIHAN BEBAS';$('#match-clock').textContent=versus?String(Math.ceil(match.seconds)).padStart(2,'0'):'∞';
     $('.match-center').setAttribute('aria-label',versus?'Pertandingan, menang dua ronde dari maksimal tiga':'Mode latihan tanpa batas waktu');
     $('#match-score').textContent=versus?`${match.playerWins} — ${match.enemyWins}`:'VS';$('#stage-name').textContent=s.short;$('#stage-subtitle').textContent=s.subtitle;
     $('#round-wins-player').textContent=versus?'◆'.repeat(match.playerWins)+'◇'.repeat(2-match.playerWins):'';$('#round-wins-enemy').textContent=versus?'◆'.repeat(match.enemyWins)+'◇'.repeat(2-match.enemyWins):'';
@@ -340,11 +342,15 @@
     if (key === 'a' || key === 'd') { const direction = key === 'a' ? -1 : 1; if (time - taps[key] <= CONFIG.doubleTapWindow) hero.runDirection = direction; else if (hero.runDirection !== direction) hero.runDirection = 0; taps[key] = time; taps[key === 'a' ? 'd' : 'a'] = -10; }
     // A new left/right press cuts a basic attack short: right away after its hit, or as soon as the hit lands.
     if ((key === 'a' || key === 'd') && hero.action?.type === 'attack') { if (hero.action.fired) { hero.action = null; state(hero.grounded ? 'idle' : 'jump'); } else { hero.action.cancelInto = 'move'; hero.action.queued = 0; } }
-    if (key === 'w') jump();
-    if (key === 's') { if (time - taps.s <= CONFIG.doubleTapWindow) jump(true); taps.s = time; }
-    if (key === ' ') startAttack();
-    if (key === 'i') cast('skill1'); if (key === 'o') cast('skill2'); if (key === 'p') cast('ultimate'); if (key === 'u') startSuper();
+    if (key === 'a' || key === 'd') emitAction('move');
+    if (key === 'w' && jump()) emitAction('jump');
+    if (key === 's') { if (time - taps.s <= CONFIG.doubleTapWindow && jump(true)) emitAction('jump'); taps.s = time; }
+    if (key === ' ' && startAttack()) emitAction('attack');
+    if ((key === 'i' && cast('skill1')) || (key === 'o' && cast('skill2'))) emitAction('skill');
+    if (key === 'p' && cast('ultimate')) emitAction('ultimate'); if (key === 'u' && startSuper()) emitAction('super');
   }
+  // The first-fight tutorial (tutorial.js) listens here for what the player actually did: move, jump, attack, skill.
+  function emitAction(kind) { if (actionListener) try { actionListener(kind); } catch (_) {} }
   function release(key) { key = key.toLowerCase(); if (netRole === 'guest') { netGuestKey(key, false); return; } keys.delete(key); if ((key === 'a' && hero.runDirection === -1) || (key === 'd' && hero.runDirection === 1)) hero.runDirection = 0; }
   function clearInput() { keys.clear(); hero.runDirection = 0; taps.a = taps.d = taps.s = -10; p2keys.clear(); p2run = 0; }
   function resetCombat() {
@@ -2075,7 +2081,7 @@
   let cutinWarm=[];
   function warmCutins(){superAssets(selectedCharacter);comboAssets(selectedCharacter);comboAssets(opponentCharacter);cutinWarm=[...new Set([selectedCharacter,opponentCharacter])].map(id=>CUTIN_ART[id]).filter(Boolean).map(src=>{const im=new Image();im.decoding='async';im.src=src;return im;});}
   function setPaused(value) { if (value && netRole) return; paused = value; clearInput(); syncUltimateVoice(); $('#pause-btn').textContent = value ? '▶' : 'Ⅱ'; const panel = $('#pause-panel'); if (value && !panel.open) panel.showModal(); if (!value && panel.open) panel.close(); if (!value) canvas.focus({ preventScroll: true }); }
-  function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML=(menuOpen?'Kembali ke menu':'Kembali ke arena')+' <span>↗</span>'; $('#settings-panel').showModal(); }
+  function openSettings() { settingsOpen = true; clearInput(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); $('#close-settings').innerHTML=(menuOpen?'Kembali ke menu':'Kembali ke arena')+' <span>↗</span>'; $('#tutorial-btn').disabled = !!netRole; $('#settings-panel').showModal(); }
   function closeSettings() { settingsOpen = false; $('#settings-panel').close(); syncUltimateVoice(); window.FrontEnd?.syncBackground(); canvas.focus({ preventScroll: true }); }
   const handled = new Set(['w','a','s','d',' ','i','o','p','u','escape','r']);
   window.addEventListener('keydown', e => { if (!handled.has(e.key.toLowerCase()) || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return; e.preventDefault(); if (!e.repeat) press(e.key); });
@@ -2093,6 +2099,8 @@
   $('#back-menu').onclick=()=>{closeSettings();setMenuOpen(true);window.FrontEnd?.home();};
   $('#character-select').onchange=e=>selectCharacter(e.target.value);
   $('#ai-toggle').onchange=e=>{aiEnabled=e.target.checked;dummy.action=null;dummy.vx=0;dummy.state='idle';};
+  $('#controls-btn').onclick = () => window.FrontEnd?.showControls?.();
+  $('#tutorial-btn').onclick = () => { if (netRole) return; closeSettings(); window.FrontEnd?.replayTutorial?.(); };
   $('#settings-btn').onclick = openSettings; $('#close-settings').onclick = closeSettings;
   $('#settings-panel').addEventListener('cancel', e => { e.preventDefault(); closeSettings(); }); $('#pause-panel').addEventListener('cancel', e => { e.preventDefault(); setPaused(false); });
   $('#hitbox-toggle').onchange = e => { hitboxes = e.target.checked; }; $('#sound-toggle').onchange = e => { unlockAudio(); muted = !e.target.checked; applyAudioMix(); };
@@ -2103,14 +2111,14 @@
   $('#sound-test').onclick = () => { unlockAudio(); sound('heavy'); }; // Inside the mobile shell the shell owns fullscreen (it also locks landscape); on its own page the game toggles it itself.
   function toggleFullscreen() { if (window.parent !== window) { try { if (window.parent.aetherFullscreen) { window.parent.aetherFullscreen(); return; } } catch (_) {} window.parent.postMessage({ type: 'aether-fullscreen' }, location.origin); return; } if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); else document.exitFullscreen?.(); }
   $('#fullscreen-btn').onclick = toggleFullscreen;
-  for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack') startAttack(); else if (name === 'super') startSuper(); else cast(name); canvas.focus({ preventScroll: true }); };
+  for (const button of document.querySelectorAll('[data-action]')) button.onclick = () => { unlockAudio(); const name = button.dataset.action; if (name === 'attack' ? startAttack() : name === 'super' ? startSuper() : cast(name)) emitAction(name === 'skill1' || name === 'skill2' ? 'skill' : name); canvas.focus({ preventScroll: true }); };
   function tick(stamp) { if (lastTime) { const elapsed = Math.min((stamp - lastTime) / 1000, .1); fps += (1 / Math.max(elapsed, .001) - fps) * .05; if (!window.__game?.manual) { accumulator += elapsed; while (accumulator >= 1 / 120) { step(1 / 120); accumulator -= 1 / 120; } } } lastTime = stamp; if (netRole === 'host' && netSend && !menuOpen && stamp - netLastSent >= 33) { netLastSent = stamp; netSend(netExport(), false); } draw(); requestAnimationFrame(tick); }
   // Deterministic QA interface: set manual=true, reset(), press/release(), advance(seconds).
   // Positions represent feet. No networking or persistent state is changed by this interface.
   window.__game = { hero, dummy, config: CONFIG, balance:BALANCE, particles, effects, projectiles, pose: heroPose, press: key => press(key, true), release, input(key, down) { if (down) press(key); else release(key); }, reset, cast, jump, attack: startAttack, combos: () => JSON.parse(JSON.stringify(comboTrack)), comboRoutes: COMBO_ROUTES, netStart, netMessage, netPeerLost, netStop, netExport, netImport, me: meActor, netRole: () => netRole, superUltimate: startSuper, superState: () => superUlt ? { t: superUlt.t, hits: superUlt.hits, landed: superUlt.landed, name: superUlt.info.name, owner: superUlt.owner } : null, p2: (key, down) => down ? p2Press(key) : p2keys.delete(key), padState: () => ({ menuOpen, localP2, netRole, paused }), clearInput, draw, manual: false,
     advance(seconds) { for (let i = 0; i < Math.round(seconds * 120); i++) step(1 / 120); draw(); return this.snapshot(); },
     snapshot() { return { ready, paused, settingsOpen, menuOpen, selectedCharacter, opponentCharacter, difficulty, stageId, match:match?{...match}:null,roundCues:[...roundCues],aiEnabled, time, stepCount, hero: JSON.parse(JSON.stringify(hero)), dummy: { ...dummy }, healthBars:{hero:hpLayers(hero.hp),dummy:hpLayers(currentDummyHP())}, squad: squad ? JSON.parse(JSON.stringify(squad)) : null, enemySquad:enemySquad?JSON.parse(JSON.stringify(enemySquad)):null, parade: parade ? JSON.parse(JSON.stringify(parade)) : null, enemyParade: enemyParade ? JSON.parse(JSON.stringify(enemyParade)) : null, flock: flock ? JSON.parse(JSON.stringify(flock)) : null, enemyFlock: enemyFlock ? JSON.parse(JSON.stringify(enemyFlock)) : null, serpent: serpent ? JSON.parse(JSON.stringify(serpent)) : null, enemySerpent: enemySerpent ? JSON.parse(JSON.stringify(enemySerpent)) : null, quake: quake ? JSON.parse(JSON.stringify(quake)) : null, enemyQuake: enemyQuake ? JSON.parse(JSON.stringify(enemyQuake)) : null, finale: finale ? { ...finale } : null, enemyFinale: enemyFinale ? { ...enemyFinale } : null, skyfall: skyfall ? { ...skyfall } : null, enemySkyfall: enemySkyfall ? { ...enemySkyfall } : null, orrery: orrery ? { ...orrery } : null, enemyOrrery: enemyOrrery ? { ...enemyOrrery } : null, sunroar: sunroar ? { ...sunroar } : null, enemySunroar: enemySunroar ? { ...enemySunroar } : null, delivery: delivery ? { ...delivery } : null, enemyDelivery: enemyDelivery ? { ...enemyDelivery } : null, tortoise: tortoise ? { ...tortoise, spirit: undefined } : null, enemyTortoise: enemyTortoise ? { ...enemyTortoise, spirit: undefined } : null, playable: playable(), cutinVisible: !!squad && squad.t < SQUAD.cutinDuration, totalDamage, comboHits, comboDamage, hitstop, cinematic, trauma, projectileCount: projectiles.length, audioState: audio?.state || 'uninitialized', audioSources, stageLoaded: !!images.stage, spriteLoaded: !!images.hero, manifestLoaded: !!manifest }; },
-    startMatch,setMenuOpen,menuSound,openSettings,toggleFullscreen,music(){return music?{on:musicOn,volume:musicVolume,playing:!music.paused,src:MUSIC_PATH,element:music}:null;},onRoundCue(fn){roundAnnouncer=typeof fn==='function'?fn:null;},
+    startMatch,setMenuOpen,menuSound,openSettings,onAction(fn){actionListener=typeof fn==='function'?fn:null;},toggleFullscreen,music(){return music?{on:musicOn,volume:musicVolume,playing:!music.paused,src:MUSIC_PATH,element:music}:null;},onRoundCue(fn){roundAnnouncer=typeof fn==='function'?fn:null;},
     announceSelection(id){return menuOpen&&playable().includes(id)?(systemAnnouncer?.play('select_'+id)||false):false;},
     stopAnnouncer(){systemAnnouncer?.clear();},announcerState(){return systemAnnouncer?.snapshot()||null;},
     selectCharacter, setAI(value){aiEnabled=!!value;dummy.action=null;dummy.vx=0;dummy.state='idle';}, opponentPose,

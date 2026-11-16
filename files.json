@@ -1,14 +1,14 @@
 {
-  "files": 367,
-  "bytes": 47001340,
+  "files": 368,
+  "bytes": 47015764,
   "list": [
     {
       "file": "index.html",
-      "bytes": 19849
+      "bytes": 20078
     },
     {
       "file": "mobile.html",
-      "bytes": 4624
+      "bytes": 4705
     },
     {
       "file": "style.css",
@@ -28,7 +28,7 @@
     },
     {
       "file": "dedemit.css",
-      "bytes": 28148
+      "bytes": 31705
     },
     {
       "file": "assets/menu/home-dedemit.webp",
@@ -52,7 +52,7 @@
     },
     {
       "file": "manifest.webmanifest",
-      "bytes": 1073
+      "bytes": 1097
     },
     {
       "file": "favicon.ico",
@@ -395,12 +395,16 @@
       "bytes": 197144
     },
     {
+      "file": "tutorial.js",
+      "bytes": 7515
+    },
+    {
       "file": "game.js",
-      "bytes": 207327
+      "bytes": 210518
     },
     {
       "file": "menu.js",
-      "bytes": 49587
+      "bytes": 49378
     },
     {
       "file": "match.js",
@@ -1464,7 +1468,7 @@
     },
     {
       "file": "precache.js",
-      "bytes": 21161
+      "bytes": 21197
     },
     {
       "file": "sw.js",

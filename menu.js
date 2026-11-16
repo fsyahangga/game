@@ -173,19 +173,21 @@
     lockIn=setTimeout(()=>{lockIn=null;delete root.dataset.picking;if(step===0&&mode==='online'){player=hover;screen='arena';step=2;render();return;}if(step===0&&mode==='online-guest'){player=hover;O()?.acceptChallenge(onlineInvite?.id,player);screen='online';render();return;}if(step===0){player=hover;step=1;hover=player==='edda'?'isolde':'edda';}else{enemy=hover;screen='arena';step=2;}render();},3*PICK_FLASH*1000);
   }
   function back(){if(lockIn)return;game.stopAnnouncer();sfx('back',true);if(screen==='online'){O()?.cancelChallenge();screen='friends';render();return;}if(screen==='select'&&step===0&&(mode==='online'||mode==='online-guest')){if(mode==='online-guest')O()?.declineChallenge(onlineInvite?.id);screen='friends';render();return;}if(screen==='arena'){screen='select';step=1;hover=enemy;}else if(screen==='select'&&step===1){step=0;hover=player;}else screen='home';render();}
-  // First fight: the controls card opens before the match starts (once; 'Lihat kontrol' on the arena screen reopens it).
-  const controlsDialog=document.querySelector('#controls-intro'),seenKey='dedemit.controlsSeen';let seenHere=false;
-  function controlsSeen(){if(seenHere)return true;try{return localStorage.getItem(seenKey)==='1';}catch(_){return false;}}
+  // The full controls card: 'Lihat kontrol' on the arena screen and 'Daftar kontrol' in Pengaturan. New players learn the
+  // basics in the first-fight tutorial (tutorial.js) instead of reading this list before they fight.
+  const controlsDialog=document.querySelector('#controls-intro');
   // The game's own Esc (pause) handling swallows the dialog's native cancel, so Esc closes it here.
   controlsDialog?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();controlsDialog.close('');}});
-  function showControls(then){
-    if(!controlsDialog?.showModal){then?.();return;}
-    const go=controlsDialog.querySelector('#controls-go');
-    go.innerHTML=then?'Siap bertarung <b class="grave" aria-hidden="true"><svg viewBox="0 0 24 26"><path fill-rule="evenodd" d="M6.6 20v-7.6c0-2 1.6-2.9 2.9-3.9 1.2-1 2.1-2.4 2.5-4.9.4 2.5 1.3 3.9 2.5 4.9 1.3 1 2.9 1.9 2.9 3.9V20zM9.2 14.3h5.6v1.3H9.2zM5.2 20h13.6v2.7H5.2z"/><rect x="2" y="22.5" width="20" height="3" rx="1.5"/></svg></b>':'Mengerti <b class="grave" aria-hidden="true"><svg viewBox="0 0 24 26"><path fill-rule="evenodd" d="M6.6 20v-7.6c0-2 1.6-2.9 2.9-3.9 1.2-1 2.1-2.4 2.5-4.9.4 2.5 1.3 3.9 2.5 4.9 1.3 1 2.9 1.9 2.9 3.9V20zM9.2 14.3h5.6v1.3H9.2zM5.2 20h13.6v2.7H5.2z"/><rect x="2" y="22.5" width="20" height="3" rx="1.5"/></svg></b>';
-    go.onclick=()=>{seenHere=true;try{localStorage.setItem(seenKey,'1');}catch(_){}controlsDialog.close('go');};
-    controlsDialog.onclose=()=>{const ok=controlsDialog.returnValue==='go';controlsDialog.returnValue='';if(ok&&then)then();else root.querySelector('[data-cmd="start"]')?.focus();};
+  function showControls(){
+    if(!controlsDialog?.showModal)return;
+    const go=controlsDialog.querySelector('#controls-go'),back=document.activeElement;
+    go.innerHTML='Mengerti <b class="grave" aria-hidden="true"><svg viewBox="0 0 24 26"><path fill-rule="evenodd" d="M6.6 20v-7.6c0-2 1.6-2.9 2.9-3.9 1.2-1 2.1-2.4 2.5-4.9.4 2.5 1.3 3.9 2.5 4.9 1.3 1 2.9 1.9 2.9 3.9V20zM9.2 14.3h5.6v1.3H9.2zM5.2 20h13.6v2.7H5.2z"/><rect x="2" y="22.5" width="20" height="3" rx="1.5"/></svg></b>';
+    go.onclick=()=>controlsDialog.close('go');
+    controlsDialog.onclose=()=>{controlsDialog.returnValue='';if(back?.isConnected)back.focus();};
     sfx('confirm',true);controlsDialog.showModal();go.focus();
   }
+  // A new player's first fight starts with the tutorial against a passive CPU, then the fight they picked.
+  function startOrTutorial(){if(mode!=='online'&&mode!=='online-guest'&&window.Tutorial?.pending())window.Tutorial.run({player,enemy,stage},start);else start();}
   // Install (PWA). The offer belongs to the top page (mobile.html on phones); see pwa.js.
   const host=(()=>{try{return window.parent!==window&&window.parent.document?window.parent:window;}catch(_){return window;}})();
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -220,13 +222,13 @@
     if(cmd==='rematch-online'&&result?.online?.peerUid){sfx('confirm',true);const mine=result.online.role==='host'?result.player:result.enemy;onlineTarget={uid:result.online.peerUid,name:result.online.peer};mode='online';player=mine;o?.rematch(onlineTarget,mine,result.stage);screen='online';render();return;}
     if((cmd==='rematch'||cmd==='reselect')&&result?.online){sfx('confirm',true);screen='friends';render();return;}
     if(cmd==='remove-friend'){if(window.confirm(`Hapus ${el?.dataset.name||'teman ini'} dari daftar teman? Kalian bisa berteman lagi lewat kode.`))o?.removeFriend(el?.dataset.uid);return;}
-    if(cmd==='controls'){showControls(null);return;}
+    if(cmd==='controls'){showControls();return;}
     if(cmd==='install'){install();return;}
     if(cmd==='fullscreen'){sfx('move',true);dismissFullscreenHint();game.toggleFullscreen?.();return;}
     if(cmd==='confirm'){confirm();return;}if(cmd==='back'){back();return;}sfx('confirm',true);
     if(cmd==='versus'||cmd==='training'||cmd==='local2p'){mode=cmd;screen='select';step=0;hover=player;render();}
     if(cmd==='settings')game.openSettings();if(cmd==='about'){screen='about';render();}
-    if(cmd==='home'){game.stopAnnouncer();screen='home';render();}if(cmd==='start'){if(mode==='online'||controlsSeen())start();else showControls(start);}
+    if(cmd==='home'){game.stopAnnouncer();screen='home';render();}if(cmd==='start')startOrTutorial();
     if(cmd==='rematch'){({player,enemy,stage,level,mode}=result);if(result.local2p)mode='local2p';start();}
     if(cmd==='reselect'){screen='select';step=0;hover=player;render();}
   }
@@ -268,7 +270,7 @@
   });
   // A controller connecting or leaving changes the home menu (Dua pemain on phones) and the arena note.
   window.addEventListener('dedemit-pads',()=>{if(!root.hidden&&!lockIn&&(screen==='home'||screen==='arena'))render();});
-  window.FrontEnd={syncBackground,home(){screen='home';game.setMenuOpen(true);render();},onlineEnded(reason){screen='friends';render();},showResult(data){result=data;({player,enemy,stage,level,mode}=data);if(data.local2p)mode='local2p';if(data.online){mode=data.online.role==='host'?'online':'online-guest';player=data.online.role==='host'?data.player:data.enemy;}screen='result';game.setMenuOpen(true);render();},assetsReady(ok=true){if(game.snapshot().menuOpen){render();if(!ok){const status=root.querySelector('#menu-ready');if(status)status.textContent='Aset gagal dimuat. Muat ulang halaman.';}}}};
+  window.FrontEnd={syncBackground,showControls,replayTutorial(){window.Tutorial?.run({player,enemy,stage},()=>window.FrontEnd.home(),true);},home(){screen='home';game.setMenuOpen(true);render();},onlineEnded(reason){screen='friends';render();},showResult(data){result=data;({player,enemy,stage,level,mode}=data);if(data.local2p)mode='local2p';if(data.online){mode=data.online.role==='host'?'online':'online-guest';player=data.online.role==='host'?data.player:data.enemy;}screen='result';game.setMenuOpen(true);render();},assetsReady(ok=true){if(game.snapshot().menuOpen){render();if(!ok){const status=root.querySelector('#menu-ready');if(status)status.textContent='Aset gagal dimuat. Muat ulang halaman.';}}}};
   // First paint after the loading screen's download, so menu pictures come straight from the cache.
   // While the fight files finish downloading in the background (preload.js stage 2), the start buttons show how far along it is.
   function prepLabel(){const p=window.DEDEMIT_PRELOAD;return p&&p.total&&!p.done?`Menyiapkan arena… ${Math.floor(p.got/p.total*100)}%`:'Menyiapkan arena…';}
