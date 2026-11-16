@@ -130,7 +130,7 @@ Step-by-step instructions for nginx, Apache/LiteSpeed and Caddy, plus a script t
     ├── audio/        # announcer clips and background music
     ├── menu/         # menu art, arena backgrounds, character select art
     ├── ui/           # shared HUD art (ARCO kit, drone, cut-in)
-    └── fonts/        # Rajdhani (SIL Open Font License); IM Fell English (OFL)
+    └── fonts/        # Rajdhani (SIL Open Font License); IM Fell English (OFL); Noto Sans Javanese subset (OFL)
 ```
 
 ## 📚 Guides
@@ -167,7 +167,7 @@ The guides also mention the full production workspace (raw generation sources, p
 - **Dedemit roster and PERANG DEDEMIT adaptation**: [fsyahangga](https://github.com/fsyahangga)
 - **Original game, engine, code and current art/audio**: [Aether Clash](https://github.com/bangtutorial/aether-clash) by [Bang Tutorial](https://www.youtube.com/watch?v=UN_0bNC2wTU) — visuals generated with Higgsfield (GPT Image), voices and announcer with ElevenLabs via Higgsfield, original background music "Midday Showdown" made with Suno (replaced here by the synthesised "Malam Dedemit")
 - **Indonesian announcer**: Microsoft neural voice id-ID-ArdiNeural, generated with [edge-tts](https://github.com/rany2/edge-tts) by `guide/tools/build_announcer.py` (replaces the original English announcer)
-- **Typography**: [IM Fell English](https://fonts.google.com/specimen/IM+Fell+English) by Igino Marini and [Rajdhani](https://fonts.google.com/specimen/Rajdhani) by Indian Type Foundry, under the SIL Open Font License (see `assets/fonts/OFL.txt`)
+- **Typography**: [IM Fell English](https://fonts.google.com/specimen/IM+Fell+English) by Igino Marini and [Rajdhani](https://fonts.google.com/specimen/Rajdhani) by Indian Type Foundry, and a subset of [Noto Sans Javanese](https://fonts.google.com/noto/specimen/Noto+Sans+Javanese) by the Noto Project for the aksara Jawa title, all under the SIL Open Font License (see `assets/fonts/OFL.txt`)
 
 ## 📄 License
 

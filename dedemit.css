@@ -250,3 +250,11 @@ body.online-guest #combo,body.online-guest .training-data{visibility:hidden}
 /* Controller connected / disconnected notice (gamepad.js). */
 .pad-toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:60;padding:8px 16px;background:#0d1714f2;border:1px solid #f3d48a;color:#efe6d2;font:700 15px Rajdhani,Arial,sans-serif;border-radius:999px;box-shadow:0 8px 24px #000a;transition:transform .25s ease;pointer-events:none}
 .pad-toast.show{transform:translate(-50%,0)}
+
+/* Javanese touches on the home cover: the title in aksara Jawa, a tumpal border (the triangle row on batik hems) and a faint kawung batik over the dark side. */
+.dedemit-title h1{margin-bottom:4px}
+@font-face{font-family:'Noto Sans Javanese';src:url('assets/fonts/noto-sans-javanese-subset.woff2') format('woff2');font-weight:400 700;font-display:swap}
+.home-title>.aksara-title{display:flex;align-items:center;gap:16px;font-family:'Noto Sans Javanese',serif;font-weight:500;font-size:clamp(17px,3.2vh,27px);line-height:1.3;color:var(--kunyit);margin:0 0 clamp(6px,1.4vh,14px);text-shadow:0 2px 0 #050b08}
+.home-title>.aksara-title:after{content:'';flex:1;max-width:170px;height:9px;opacity:.75;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='9'%3E%3Cpath d='M0 9 6 0l6 9z' fill='%23d9a23a'/%3E%3C/svg%3E") left bottom/12px 9px repeat-x}
+.home-batik{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' fill='none' stroke='%23d9a23a' stroke-width='1.2'%3E%3Cellipse cx='22' cy='11' rx='5.5' ry='9.5'/%3E%3Cellipse cx='22' cy='33' rx='5.5' ry='9.5'/%3E%3Cellipse cx='11' cy='22' rx='9.5' ry='5.5'/%3E%3Cellipse cx='33' cy='22' rx='9.5' ry='5.5'/%3E%3Ccircle cx='22' cy='22' r='1.6' fill='%23d9a23a'/%3E%3C/svg%3E") 0 0/44px 44px;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 22%,transparent 52%);mask-image:linear-gradient(90deg,#000 0,#000 22%,transparent 52%)}
+@media(max-height:420px){.dedemit-title h1{margin-top:0;margin-bottom:2px}.home-title>.aksara-title{font-size:13px;line-height:1.1;margin:0 0 4px}.home-title>.aksara-title:after{max-width:110px;height:7px;background-size:9px 7px}}

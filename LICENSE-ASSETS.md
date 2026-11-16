@@ -28,6 +28,7 @@ This summary is not the license itself. The full legal text is at <https://creat
 | File(s) | Terms |
 | --- | --- |
 | `assets/fonts/Rajdhani-*.ttf` | Rajdhani by Indian Type Foundry, under the [SIL Open Font License 1.1](assets/fonts/OFL.txt) |
+| `assets/fonts/noto-sans-javanese-subset.woff2` | Subset of Noto Sans Javanese by the Noto Project Authors, under the [SIL Open Font License 1.1](assets/fonts/OFL-NotoSansJavanese.txt) |
 
 ## Commercial use
 
