@@ -1,6 +1,6 @@
 {
   "files": 365,
-  "bytes": 46927612,
+  "bytes": 46797009,
   "list": [
     {
       "file": "index.html",
@@ -16,7 +16,7 @@
     },
     {
       "file": "menu.css",
-      "bytes": 29018
+      "bytes": 29049
     },
     {
       "file": "preload.js",
@@ -32,7 +32,7 @@
     },
     {
       "file": "assets/menu/home-dedemit.webp",
-      "bytes": 361520
+      "bytes": 230886
     },
     {
       "file": "assets/fonts/im-fell-english-latin-400-normal.woff2",
